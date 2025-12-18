@@ -68,11 +68,11 @@
 
                 <!-- Área de Importação -->
                 <div class="flex items-center gap-2">
-                    <!-- Atualizado para aceitar XLSX -->
-                    <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" class="hidden" onchange="processFile(this)">
+                    <!-- Atualizado para aceitar XLSX e XLSM -->
+                    <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .xlsm" class="hidden" onchange="processFile(this)">
                     <button onclick="document.getElementById('fileInput').click()" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all border border-slate-200 shadow-sm">
                         <i data-lucide="file-spreadsheet" class="w-3 h-3 text-green-600"></i>
-                        Carregar Excel ou CSV
+                        Carregar Excel (.xlsx, .xlsm)
                     </button>
                     <div id="loadingSpinner" class="hidden"><div class="loader"></div></div>
                     <span id="fileNameDisplay" class="text-xs text-slate-400 italic hidden ml-2"></span>
@@ -383,7 +383,7 @@
 
                     } catch (err) {
                         console.error(err);
-                        alert("Erro ao processar arquivo. Verifique se é um Excel (.xlsx) válido.");
+                        alert("Erro ao processar arquivo. Verifique se é um Excel (.xlsx, .xlsm) válido.");
                         document.getElementById('loadingSpinner').classList.add('hidden');
                     }
                 }, 100);
@@ -597,16 +597,17 @@
                     </td>
                     <td class="p-4">
                         <span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">${item.cidade || 'N/A'}</span>
-                    </td>
-                    <td class="p-4 text-center text-xs text-slate-600 font-mono">${formatDate(item.inicio)}</td>
-                    <td class="p-4">
-                        <div class="flex items-center justify-center gap-2">
-                            <div class="flex flex-col items-center" title="1ª Visita">${badge(item.v1)}</div>
-                            <div class="w-4 h-px bg-slate-200"></div>
-                            <div class="flex flex-col items-center" title="2ª Visita">${badge(item.v2)}</div>
-                            <div class="w-4 h-px bg-slate-200"></div>
-                            <div class="flex flex-col items-center" title="3ª Visita">${badge(item.v3)}</div>
-                        </div>
+                                <!-- Dados Inseridos Aqui -->
+                                <tr>
+                                    <td colspan="6" class="p-10 text-center flex flex-col items-center justify-center text-slate-400">
+                                        <i data-lucide="file-spreadsheet" class="w-12 h-12 mb-3 text-slate-200"></i>
+                                        <p>Nenhuma planilha carregada.</p>
+                                        <p class="text-xs mt-1">Carregue um arquivo Excel (.xlsx, .xlsm) ou CSV.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     </td>
                     <td class="p-4 text-center">
                         ${statusBadge}
