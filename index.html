@@ -3,57 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel BI - Supervisão Senac</title>
+    <title>Painel BI - Supervisão Senac 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- SheetJS atualizado para ler XLSM -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
         :root {
             --senac-blue: #004587;
             --senac-orange: #f68d2e;
+            --senac-light-blue: #0056a3;
         }
 
-        /* Estilo BI */
-        .card-bi { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
-        .bg-senac { background-color: var(--senac-blue); }
-        .text-senac { color: var(--senac-blue); }
-        .border-l-4-orange { border-left: 4px solid var(--senac-orange); }
-        .border-l-4-blue { border-left: 4px solid var(--senac-blue); }
+        /* Classes Utilitárias Senac */
+        .text-senac-blue { color: var(--senac-blue); }
+        .text-senac-orange { color: var(--senac-orange); }
+        .bg-senac-blue { background-color: var(--senac-blue); }
+        .bg-senac-orange { background-color: var(--senac-orange); }
         
+        .card-bi { 
+            background: white; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); 
+            border: 1px solid #e2e8f0; 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-bi:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         /* Loader */
-        .loader { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        .loader { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #f68d2e; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- Header -->
-    <header class="bg-senac h-16 flex items-center justify-between px-6 text-white shadow-lg flex-shrink-0 z-20">
-        <div class="flex items-center gap-3">
-            <!-- Ícone/Logo simples -->
-            <div class="w-8 h-8 bg-white/10 rounded flex items-center justify-center font-bold text-xs">S</div>
-            <div class="font-bold text-xl tracking-wide">SENAC <span class="font-light opacity-80">| Supervisão BI</span></div>
-        </div>
+    <!-- Header 2025 -->
+    <header class="bg-white h-20 flex items-center justify-between px-8 border-b border-slate-200 flex-shrink-0 z-30 shadow-sm">
         <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 hover:bg-white/20 transition-colors cursor-pointer" onclick="document.getElementById('fileInput').click()">
-                <!-- Aceita explicitamente .xlsm -->
-                <input type="file" id="fileInput" accept=".csv, .xlsx, .xlsm, .xls" class="hidden" onchange="processFile(this)">
-                <button class="text-xs font-bold uppercase hover:text-orange-300 transition-colors flex items-center gap-2 cursor-pointer pointer-events-none">
-                    <i data-lucide="upload" class="w-4 h-4"></i> 
-                    <span>Carregar "Dados Gerais" (.xlsx / .xlsm)</span>
-                </button>
-                <div id="loadingSpinner" class="hidden"><div class="loader"></div></div>
+            <!-- Logo Senac CSS -->
+            <div class="flex flex-col select-none">
+                <div class="flex items-baseline leading-none">
+                    <span class="text-3xl font-extrabold text-senac-blue tracking-tight">Senac</span>
+                </div>
+                <div class="w-full h-1.5 bg-senac-orange mt-1 rounded-full"></div>
             </div>
-            <div class="w-px h-6 bg-white/20"></div>
-            <div class="text-right">
-                <p class="text-xs font-bold">Gestor</p>
-                <p class="text-[10px] opacity-75" id="currentDate">--/--/----</p>
+            <div class="h-10 w-px bg-slate-200 mx-2"></div>
+            <div>
+                <h1 class="font-bold text-lg text-slate-700">Painel de Supervisão</h1>
+                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Gestão de Aprendizagem</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-6">
+            <!-- Botão Upload -->
+            <div class="flex items-center gap-3">
+                <input type="file" id="fileInput" accept=".csv, .xlsx, .xlsm, .xls" class="hidden" onchange="processFile(this)">
+                <button onclick="document.getElementById('fileInput').click()" class="group flex items-center gap-2 bg-slate-50 hover:bg-senac-blue hover:text-white text-slate-600 px-4 py-2.5 rounded-xl border border-slate-200 transition-all shadow-sm">
+                    <i data-lucide="upload-cloud" class="w-4 h-4 text-senac-orange group-hover:text-white transition-colors"></i>
+                    <span class="text-xs font-bold uppercase">Importar Dados</span>
+                </button>
+                <div id="loadingSpinner" class="hidden"><div class="loader border-t-senac-blue"></div></div>
+            </div>
+
+            <div class="text-right hidden md:block border-l border-slate-200 pl-6">
+                <p class="text-xs font-bold text-senac-blue">Gestão 2025</p>
+                <p class="text-[10px] text-slate-400 font-mono" id="currentDate">--/--/----</p>
             </div>
         </div>
     </header>
@@ -61,110 +88,139 @@
     <div class="flex-1 flex overflow-hidden">
         
         <!-- Sidebar Filtros -->
-        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col z-10 overflow-y-auto">
-            <div class="p-5 border-b border-slate-100">
-                <h3 class="font-bold text-slate-700 flex items-center gap-2 mb-4">
-                    <i data-lucide="filter" class="w-4 h-4 text-senac"></i> Filtros de Dados
+        <aside class="w-80 bg-white border-r border-slate-200 flex flex-col z-20 overflow-y-auto shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+            <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2 mb-5">
+                    <div class="p-1.5 bg-white border border-slate-200 rounded-lg shadow-sm text-senac-orange">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                    </div>
+                    Filtros Avançados
                 </h3>
                 
-                <!-- Busca -->
-                <div class="mb-4">
-                    <input type="text" id="filterSearch" onkeyup="applyFilters()" placeholder="Buscar Nome ou Turma..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded text-sm focus:border-blue-700 outline-none transition-shadow focus:ring-1 focus:ring-blue-700">
+                <!-- Busca Corrigida -->
+                <div class="relative group mb-5">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-senac-blue transition-colors"></i>
+                    <input type="text" id="filterSearch" onkeyup="applyFilters()" placeholder="Buscar Jovem ou Turma..." 
+                           class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:border-senac-blue focus:ring-4 focus:ring-blue-50 outline-none transition-all shadow-sm">
                 </div>
 
                 <!-- Toggle Encerrados -->
-                <div class="mb-4 bg-slate-50 p-3 rounded border border-slate-200 hover:bg-slate-100 transition-colors">
-                    <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" id="filterEncerrados" onchange="applyFilters()" class="accent-blue-700 w-4 h-4">
-                        <span class="text-xs font-bold text-slate-600">Mostrar Contratos Encerrados</span>
+                <div class="mb-6">
+                    <label class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-senac-blue/30 hover:bg-blue-50/30 transition-all shadow-sm group">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" id="filterEncerrados" onchange="applyFilters()" class="peer h-4 w-4 cursor-pointer appearance-none rounded border border-slate-300 shadow-sm checked:border-senac-blue checked:bg-senac-blue group-hover:border-senac-blue">
+                            <i data-lucide="check" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white opacity-0 peer-checked:opacity-100"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-600 group-hover:text-senac-blue">Incluir Encerrados</span>
                     </label>
                 </div>
 
                 <!-- Dropdowns -->
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">Região (Atuação)</label>
-                        <select id="filterRegiao" onchange="applyFilters()" class="w-full p-2 border border-slate-200 rounded text-sm outline-none focus:border-blue-700"><option value="">Todas</option></select>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wide ml-1 mb-1 block">Região</label>
+                        <div class="relative">
+                            <select id="filterRegiao" onchange="applyFilters()" class="w-full appearance-none p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-senac-blue focus:bg-white transition-all cursor-pointer text-slate-700">
+                                <option value="">Todas as Regiões</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                        </div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">Cidade (Empresa)</label>
-                        <select id="filterCidade" onchange="applyFilters()" class="w-full p-2 border border-slate-200 rounded text-sm outline-none focus:border-blue-700"><option value="">Todas</option></select>
-                    </div>
-                </div>
-
-                <!-- Intervalo de Datas -->
-                <div class="mt-4 pt-4 border-t border-slate-100">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Contrato (Início - Fim)</label>
-                    <div class="grid grid-cols-2 gap-2 mt-1">
-                        <input type="date" id="dateStart" onchange="applyFilters()" class="text-xs border p-1.5 rounded outline-none focus:border-blue-700 text-slate-600">
-                        <input type="date" id="dateEnd" onchange="applyFilters()" class="text-xs border p-1.5 rounded outline-none focus:border-blue-700 text-slate-600">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wide ml-1 mb-1 block">Cidade</label>
+                        <div class="relative">
+                            <select id="filterCidade" onchange="applyFilters()" class="w-full appearance-none p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-senac-blue focus:bg-white transition-all cursor-pointer text-slate-700">
+                                <option value="">Todas as Cidades</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Legenda Rápida -->
-            <div class="p-5 mt-auto bg-slate-50 text-xs text-slate-500 space-y-2 border-t border-slate-200">
-                <div class="font-bold text-slate-400 uppercase text-[10px] mb-2">Legenda Visitas</div>
-                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-green-100 border border-green-300 rounded-full flex items-center justify-center text-[8px] text-green-700 font-bold">✓</div> Realizada</div>
-                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-red-100 border border-red-300 rounded-full flex items-center justify-center text-[8px] text-red-700 font-bold">!</div> Atrasada</div>
-                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-orange-100 border border-orange-300 rounded-full flex items-center justify-center text-[8px] text-orange-700 font-bold">⚠</div> Vence em 30d</div>
-                <div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200">
-                    <i data-lucide="shield-check" class="w-3 h-3 text-green-600"></i>
-                    <span class="text-[10px] text-slate-400">Dados processados localmente. Seguro.</span>
+            <!-- Legenda -->
+            <div class="p-6 mt-auto bg-slate-50 border-t border-slate-200">
+                <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Legenda de Situação</p>
+                <div class="space-y-2.5">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+                        <span class="text-xs text-slate-600 font-medium">No Prazo / Realizada</span>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
+                        <span class="text-xs text-slate-600 font-medium">Atrasado (> 90 dias)</span>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
+                        <span class="text-xs text-slate-400">Encerrado</span>
+                    </div>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 flex flex-col overflow-hidden bg-slate-100 relative">
+        <!-- Conteúdo Principal -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-slate-50/50 relative">
             
-            <!-- Dashboard BI (Gráficos) -->
+            <!-- Dashboard BI -->
             <div class="p-6 pb-2 grid grid-cols-12 gap-6 h-auto flex-shrink-0">
+                
                 <!-- KPIs -->
-                <div class="col-span-12 md:col-span-3 space-y-3">
-                    <div class="card-bi p-4 border-l-4-blue cursor-pointer hover:bg-blue-50 transition-colors group" onclick="filterByStatus('all')">
-                        <div class="flex justify-between items-start">
+                <div class="col-span-12 lg:col-span-3 grid grid-cols-1 gap-4">
+                    <!-- Card Total -->
+                    <div onclick="filterByStatus('all')" class="card-bi p-5 cursor-pointer relative overflow-hidden group border-l-4 border-l-senac-blue">
+                        <div class="flex justify-between items-start z-10 relative">
                             <div>
-                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Jovens</p>
-                                <h2 class="text-2xl font-bold text-slate-800 group-hover:text-senac-blue transition-colors" id="kpiTotal">0</h2>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Total de Jovens</p>
+                                <h2 class="text-3xl font-extrabold text-slate-800 group-hover:text-senac-blue transition-colors" id="kpiTotal">0</h2>
                             </div>
-                            <div class="p-2 bg-blue-50 rounded text-senac-blue"><i data-lucide="users" class="w-4 h-4"></i></div>
+                            <div class="p-2.5 bg-blue-50 text-senac-blue rounded-xl group-hover:scale-110 transition-transform">
+                                <i data-lucide="users" class="w-5 h-5"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-bi p-4 border-l-4 border-l-red-500 cursor-pointer hover:bg-red-50 transition-colors group" onclick="filterByStatus('atrasado')">
-                        <div class="flex justify-between items-start">
+
+                    <!-- Card Atrasados -->
+                    <div onclick="filterByStatus('atrasado')" class="card-bi p-5 cursor-pointer relative overflow-hidden group border-l-4 border-l-red-500">
+                        <div class="flex justify-between items-start z-10 relative">
                             <div>
-                                <p class="text-[10px] text-red-400 font-bold uppercase tracking-wider">Visitas Atrasadas</p>
-                                <h2 class="text-2xl font-bold text-red-600" id="kpiAtrasados">0</h2>
+                                <p class="text-[11px] text-red-400 font-bold uppercase tracking-wider mb-1">Visitas Atrasadas</p>
+                                <h2 class="text-3xl font-extrabold text-red-600" id="kpiAtrasados">0</h2>
+                                <p class="text-[10px] text-red-400 mt-1 font-medium">Fora do prazo de 90 dias</p>
                             </div>
-                            <div class="p-2 bg-red-50 rounded text-red-500"><i data-lucide="alert-circle" class="w-4 h-4"></i></div>
+                            <div class="p-2.5 bg-red-50 text-red-500 rounded-xl group-hover:scale-110 transition-transform">
+                                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-bi p-4 border-l-4-orange cursor-pointer hover:bg-orange-50 transition-colors group" onclick="filterByStatus('atencao')">
-                        <div class="flex justify-between items-start">
+                    
+                    <!-- Card No Prazo -->
+                    <div onclick="filterByStatus('noprazo')" class="card-bi p-5 cursor-pointer relative overflow-hidden group border-l-4 border-l-emerald-500">
+                        <div class="flex justify-between items-start z-10 relative">
                             <div>
-                                <p class="text-[10px] text-orange-400 font-bold uppercase tracking-wider">Atenção (30 dias)</p>
-                                <h2 class="text-2xl font-bold text-orange-500" id="kpiAtencao">0</h2>
+                                <p class="text-[11px] text-emerald-500 font-bold uppercase tracking-wider mb-1">Em Dia</p>
+                                <h2 class="text-3xl font-extrabold text-emerald-600" id="kpiNoPrazo">0</h2>
                             </div>
-                            <div class="p-2 bg-orange-50 rounded text-orange-500"><i data-lucide="clock" class="w-4 h-4"></i></div>
+                            <div class="p-2.5 bg-emerald-50 text-emerald-500 rounded-xl group-hover:scale-110 transition-transform">
+                                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Gráfico de Pizza (Status) -->
-                <div class="col-span-12 md:col-span-4 card-bi p-4 flex flex-col">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
-                        <i data-lucide="pie-chart" class="w-3 h-3"></i> Status Geral
+                <!-- Gráfico Rosca (Status) -->
+                <div class="col-span-12 md:col-span-4 lg:col-span-4 card-bi p-5 flex flex-col">
+                    <h3 class="text-xs font-bold text-slate-600 uppercase mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-senac-orange"></i> Status Geral
                     </h3>
-                    <div class="flex-1 min-h-0 relative">
+                    <div class="flex-1 min-h-0 relative flex items-center justify-center">
                         <canvas id="chartStatus"></canvas>
                     </div>
                 </div>
 
-                <!-- Gráfico de Barras (Regionais) -->
-                <div class="col-span-12 md:col-span-5 card-bi p-4 flex flex-col">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
-                        <i data-lucide="bar-chart-2" class="w-3 h-3"></i> Jovens por Região (Top 5)
+                <!-- Gráfico Barras (Região) -->
+                <div class="col-span-12 md:col-span-5 lg:col-span-5 card-bi p-5 flex flex-col">
+                    <h3 class="text-xs font-bold text-slate-600 uppercase mb-4 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-senac-blue"></i> Top Regiões
                     </h3>
                     <div class="flex-1 min-h-0 relative">
                         <canvas id="chartRegiao"></canvas>
@@ -172,36 +228,41 @@
                 </div>
             </div>
 
-            <!-- Tabela Detalhada -->
+            <!-- Tabela -->
             <div class="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
-                <div class="card-bi flex-1 flex flex-col overflow-hidden">
-                    <div class="px-5 py-3 border-b border-slate-100 bg-white flex justify-between items-center">
-                        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-                            <i data-lucide="list" class="w-4 h-4 text-slate-400"></i> Detalhamento
-                        </h3>
-                        <div class="text-xs text-slate-400 font-mono">
-                            <strong id="countFiltered" class="text-slate-700">0</strong> registros encontrados
+                <div class="card-bi flex-1 flex flex-col overflow-hidden bg-white">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-2xl">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-slate-100 rounded-lg text-slate-600">
+                                <i data-lucide="list" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-700 text-sm">Detalhamento dos Contratos</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Mostrando <strong id="countFiltered" class="text-senac-blue">0</strong> registros</p>
+                            </div>
                         </div>
                     </div>
 
                     <div class="flex-1 overflow-auto custom-scrollbar">
                         <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 sticky top-0 z-10 text-xs uppercase text-slate-500 font-semibold shadow-sm">
+                            <thead class="bg-slate-50 sticky top-0 z-10 text-[11px] uppercase text-slate-500 font-bold tracking-wide shadow-sm">
                                 <tr>
-                                    <th class="p-4 w-[25%] border-b border-slate-200">Jovem / Turma</th>
-                                    <th class="p-4 w-[20%] border-b border-slate-200">Empresa / Supervisor</th>
-                                    <th class="p-4 w-[10%] text-center border-b border-slate-200">Início/Fim</th>
-                                    <th class="p-4 w-[35%] text-center border-b border-slate-200">Controle de Visitas</th>
-                                    <th class="p-4 w-[10%] text-center border-b border-slate-200">Status</th>
+                                    <th class="p-4 w-[25%]">Jovem / Turma</th>
+                                    <th class="p-4 w-[20%]">Empresa / Cidade</th>
+                                    <th class="p-4 w-[20%]">Supervisor</th>
+                                    <th class="p-4 w-[10%] text-center">Início/Fim</th>
+                                    <th class="p-4 w-[15%] text-center">Situação Visitas</th>
+                                    <th class="p-4 w-[10%] text-center">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="tableBody" class="divide-y divide-slate-100 text-sm bg-white">
-                                <!-- Conteúdo gerado via JS -->
+                            <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
                                 <tr>
-                                    <td colspan="5" class="p-10 text-center text-slate-400">
-                                        <div class="flex flex-col items-center gap-2">
-                                            <i data-lucide="file-spreadsheet" class="w-8 h-8 opacity-50"></i>
-                                            <p>Carregue a planilha "Dados Gerais" para visualizar.</p>
+                                    <td colspan="6" class="p-12 text-center text-slate-400">
+                                        <div class="flex flex-col items-center gap-3">
+                                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
+                                                <i data-lucide="file-spreadsheet" class="w-8 h-8 opacity-40"></i>
+                                            </div>
+                                            <p>Aguardando importação...</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -209,18 +270,19 @@
                         </table>
                     </div>
                     
-                    <!-- Paginação -->
-                    <div class="p-2 border-t border-slate-100 flex justify-center items-center gap-4 bg-slate-50">
-                        <button onclick="changePage(-1)" class="px-3 py-1 border rounded bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition-colors disabled:opacity-50" id="btnPrev">Anterior</button>
-                        <span id="pageDisplay" class="px-3 py-1 text-xs font-bold text-slate-600 bg-slate-200 rounded">1 / 1</span>
-                        <button onclick="changePage(1)" class="px-3 py-1 border rounded bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition-colors disabled:opacity-50" id="btnNext">Próxima</button>
+                    <div class="p-3 border-t border-slate-100 flex justify-between items-center bg-slate-50 rounded-b-2xl px-6">
+                        <span class="text-xs text-slate-500">Página <span id="pageDisplay" class="font-bold text-slate-700">1</span></span>
+                        <div class="flex gap-2">
+                            <button onclick="changePage(-1)" class="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-white text-xs font-bold text-slate-600 disabled:opacity-50 transition-all shadow-sm" id="btnPrev">Anterior</button>
+                            <button onclick="changePage(1)" class="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-white text-xs font-bold text-slate-600 disabled:opacity-50 transition-all shadow-sm" id="btnNext">Próxima</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- SCRIPT -->
     <script>
         const today = new Date();
         document.getElementById('currentDate').innerText = today.toLocaleDateString('pt-BR');
@@ -230,13 +292,15 @@
         let currentPage = 1;
         const itemsPerPage = 50;
         
-        // Charts Instances
+        // Gráficos
         let chartStatusInstance = null;
         let chartRegiaoInstance = null;
 
         window.onload = () => lucide.createIcons();
 
-        // 1. Processamento de Arquivo
+        // -----------------------------------------------------------
+        // 1. Processamento de Dados
+        // -----------------------------------------------------------
         function processFile(input) {
             const file = input.files[0];
             if(!file) return;
@@ -250,19 +314,16 @@
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, {type: 'array'});
                         
-                        // Busca inteligente da aba
                         let sheetName = workbook.SheetNames.find(n => n.toLowerCase().trim() === "dados gerais");
-                        if(!sheetName) sheetName = workbook.SheetNames[0]; // Fallback
+                        if(!sheetName) sheetName = workbook.SheetNames[0]; 
 
                         const worksheet = workbook.Sheets[sheetName];
                         const json = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
                         
                         if(json.length < 2) throw new Error("Vazio");
 
-                        // Map Headers
                         const headers = json[0].map(h => String(h).trim());
                         
-                        // Função auxiliar para buscar coluna
                         const getIdx = (candidates) => {
                             for(let c of candidates) {
                                 const i = headers.findIndex(h => h.toLowerCase().includes(c.toLowerCase()));
@@ -271,6 +332,7 @@
                             return -1;
                         }
 
+                        // Mapeamento
                         const map = {
                             nome: getIdx(["Apr. Nome", "Nome", "Jovem"]),
                             turma: getIdx(["Turma", "Matrícula"]),
@@ -291,20 +353,18 @@
                             v3St: getIdx(["Status Visita"])
                         };
 
-                        // Processamento das linhas
                         rawData = json.slice(1).map((row, i) => {
                             if(!row[map.nome]) return null;
-
-                            // Correção para Status das visitas 2 e 3 que podem ter nomes repetidos/parecidos
-                            // Vamos pegar os índices exatos baseados na posição da data
+                            
+                            // Correção de índices repetidos para status
                             const idxV2St = map.v2Dt > -1 ? map.v2Dt + 1 : -1; 
                             const idxV3St = map.v3Dt > -1 ? map.v3Dt + 1 : -1;
 
                             return {
                                 id: i,
-                                nome: row[map.nome],
-                                turma: row[map.turma] || "N/A",
-                                hrTeoria: row[map.hrTeoria] || "-",
+                                nome: String(row[map.nome]).trim(),
+                                turma: String(row[map.turma] || "N/A"),
+                                hrTeoria: formatExcelTime(row[map.hrTeoria]), // Conversão de Horário
                                 cidade: row[map.cidade] || "N/A",
                                 regiao: row[map.regiao] || "Geral",
                                 empresa: row[map.empresa],
@@ -316,9 +376,9 @@
                                 inicio: parseDate(row[map.dtIni]),
                                 fim: parseDate(row[map.dtFim]),
                                 visits: [
-                                    { date: parseDate(row[map.v1Dt]), status: String(row[map.v1St]).trim(), label: "1ª Visita" },
-                                    { date: parseDate(row[map.v2Dt]), status: String(row[idxV2St] || row[map.v2St]).trim(), label: "2ª Visita" },
-                                    { date: parseDate(row[map.v3Dt]), status: String(row[idxV3St] || row[map.v3St]).trim(), label: "3ª Visita" }
+                                    { date: parseDate(row[map.v1Dt]), status: String(row[map.v1St]).trim(), label: "1ª" },
+                                    { date: parseDate(row[map.v2Dt]), status: String(row[idxV2St] || row[map.v2St]).trim(), label: "2ª" },
+                                    { date: parseDate(row[map.v3Dt]), status: String(row[idxV3St] || row[map.v3St]).trim(), label: "3ª" }
                                 ]
                             };
                         }).filter(x => x);
@@ -326,13 +386,12 @@
                         populateFilters();
                         applyFilters();
                         document.getElementById('loadingSpinner').classList.add('hidden');
-                        // Feedback visual sutil em vez de alert
-                        const btn = document.querySelector('button span');
-                        if(btn) btn.innerText = "Arquivo Carregado!";
+                        const btnText = document.querySelector('button span');
+                        if(btnText) btnText.innerText = "Dados Atualizados";
 
                     } catch(e) {
                         console.error(e);
-                        alert("Erro ao ler arquivo. Certifique-se de que é um arquivo Excel (.xlsx, .xlsm) válido e contém a aba 'Dados Gerais'.");
+                        alert("Erro ao ler arquivo. Verifique a aba 'Dados Gerais'.");
                         document.getElementById('loadingSpinner').classList.add('hidden');
                     }
                 }, 100);
@@ -340,6 +399,7 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // --- Helpers de Formatação ---
         function parseDate(val) {
             if(!val) return null;
             if(val instanceof Date) return val;
@@ -359,72 +419,96 @@
             return null;
         }
 
-        // 2. Lógica de Negócio (O CORAÇÃO DO SISTEMA)
+        function formatExcelTime(val) {
+            if (!val) return "-";
+            if (typeof val === 'number') {
+                // Converte fração de dia excel (ex: 0.5) para HH:MM
+                const totalSeconds = Math.round(val * 86400);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            }
+            return val; // Se já for string "13:00:00", retorna direto
+        }
+
+        // -----------------------------------------------------------
+        // 2. Lógica de Negócio (Regra dos 90 Dias)
+        // -----------------------------------------------------------
         function analyzeJovem(jovem) {
-            // Verifica se contrato encerrou
             const isEncerrado = jovem.fim && jovem.fim < today;
+            let globalStatus = "No Prazo";
+            let globalColor = "green"; // green, red, gray
             
-            let globalStatus = "Regular";
-            let globalColor = "green";
-            let visitsDone = 0;
-            let critical = false;
-            let warning = false;
+            // Se encerrado, ignora cálculos de atraso
+            if (isEncerrado) {
+                return { ...jovem, processedVisits: jovem.visits, globalStatus: "Encerrado", globalColor: "gray", isEncerrado };
+            }
+
+            // Descobrir última data válida de referência (Início ou Última Visita Realizada)
+            let lastReferenceDate = jovem.inicio;
+            let visitsDoneCount = 0;
 
             const processedVisits = jovem.visits.map(v => {
-                let state = "pending"; // pending, done, late, warning
+                let state = "pending";
+                const isRealizada = v.status.toLowerCase().includes("realizada");
                 
-                // Se o status na planilha for explicitamente "Realizada" ou "realizada"
-                if(v.status.toLowerCase().includes("realizada")) {
+                if (isRealizada) {
                     state = "done";
-                    visitsDone++;
-                } else if (v.date) {
-                    // Se não está realizada, verificamos a data
-                    const diffDays = Math.ceil((v.date - today) / (1000 * 60 * 60 * 24));
-                    
-                    if (diffDays < 0) {
-                        state = "late"; // Passou da data e não realizou
-                        critical = true;
-                    } else if (diffDays <= 30) {
-                        state = "warning"; // Vence em 30 dias
-                        warning = true;
-                    } else {
-                        state = "future";
-                    }
+                    visitsDoneCount++;
+                    if (v.date) lastReferenceDate = v.date; // Atualiza referência se tiver data
                 } else {
-                    state = "nodate"; // Sem data definida
+                    // Visita pendente
+                    state = "pending"; 
                 }
-                
                 return { ...v, state };
             });
 
-            if (visitsDone === 3) {
+            // Se todas realizadas
+            if (visitsDoneCount === 3) {
                 globalStatus = "Concluído";
                 globalColor = "blue";
-            } else if (critical) {
+                return { ...jovem, processedVisits, globalStatus, globalColor, isEncerrado };
+            }
+
+            // CÁLCULO DE ATRASO
+            // Se não temos data de início, não dá pra calcular
+            if (!lastReferenceDate) {
+                globalStatus = "Sem Data Ini";
+                globalColor = "gray";
+                return { ...jovem, processedVisits, globalStatus, globalColor, isEncerrado };
+            }
+
+            // Prazo é 90 dias após a referência
+            const deadline = new Date(lastReferenceDate);
+            deadline.setDate(deadline.getDate() + 90);
+
+            // Comparar hoje com deadline
+            // Se hoje > deadline -> Atrasado
+            if (today > deadline) {
                 globalStatus = "Atrasado";
                 globalColor = "red";
-            } else if (warning) {
-                globalStatus = "Atenção";
-                globalColor = "orange";
-            } else if (isEncerrado) {
-                globalStatus = "Encerrado";
-                globalColor = "gray";
+            } else {
+                globalStatus = "No Prazo";
+                globalColor = "green";
             }
 
             return { ...jovem, processedVisits, globalStatus, globalColor, isEncerrado };
         }
 
+
+        // -----------------------------------------------------------
         // 3. Filtros e Renderização
+        // -----------------------------------------------------------
         function populateFilters() {
             const regioes = [...new Set(rawData.map(i => i.regiao))].sort();
             const cidades = [...new Set(rawData.map(i => i.cidade))].sort();
             
             const selReg = document.getElementById('filterRegiao');
-            selReg.innerHTML = '<option value="">Todas</option>';
+            selReg.innerHTML = '<option value="">Todas as Regiões</option>';
             regioes.forEach(r => selReg.innerHTML += `<option value="${r}">${r}</option>`);
 
             const selCid = document.getElementById('filterCidade');
-            selCid.innerHTML = '<option value="">Todas</option>';
+            selCid.innerHTML = '<option value="">Todas as Cidades</option>';
             cidades.forEach(c => selCid.innerHTML += `<option value="${c}">${c}</option>`);
         }
 
@@ -440,27 +524,23 @@
             const regiao = document.getElementById('filterRegiao').value;
             const cidade = document.getElementById('filterCidade').value;
             const showEncerrados = document.getElementById('filterEncerrados').checked;
-            const dStart = document.getElementById('dateStart').value ? new Date(document.getElementById('dateStart').value) : null;
-            const dEnd = document.getElementById('dateEnd').value ? new Date(document.getElementById('dateEnd').value) : null;
 
             filteredData = rawData.map(analyzeJovem).filter(item => {
-                // Filtro Texto
-                if(search && !item.nome.toLowerCase().includes(search) && !item.turma.toLowerCase().includes(search)) return false;
+                // Filtro Texto (CORRIGIDO: checa se existe valor antes de toLowerCase)
+                const nameMatch = item.nome && item.nome.toLowerCase().includes(search);
+                const classMatch = item.turma && item.turma.toLowerCase().includes(search);
+                if(search && !nameMatch && !classMatch) return false;
                 
                 // Filtro Dropdowns
                 if(regiao && item.regiao !== regiao) return false;
                 if(cidade && item.cidade !== cidade) return false;
 
-                // Filtro Datas
-                if(dStart && (!item.inicio || item.inicio < dStart)) return false;
-                if(dEnd && (!item.fim || item.fim > dEnd)) return false;
-
                 // Filtro Encerrados
                 if(!showEncerrados && item.isEncerrado) return false;
 
                 // Filtro Status (Click nos Cards)
-                if(currentStatusFilter === 'atrasado' && item.globalStatus !== 'Atrasado') return false;
-                if(currentStatusFilter === 'atencao' && item.globalStatus !== 'Atenção') return false;
+                if(currentStatusFilter === 'atrasado' && item.globalColor !== 'red') return false;
+                if(currentStatusFilter === 'noprazo' && item.globalColor !== 'green' && item.globalColor !== 'blue') return false;
 
                 return true;
             });
@@ -473,21 +553,25 @@
         function updateDashboard() {
             document.getElementById('countFiltered').innerText = filteredData.length;
             
-            // KPIs
             const total = filteredData.length;
-            const atrasados = filteredData.filter(i => i.globalStatus === 'Atrasado').length;
-            const atencao = filteredData.filter(i => i.globalStatus === 'Atenção').length;
+            const atrasados = filteredData.filter(i => i.globalColor === 'red').length;
+            const noPrazo = filteredData.filter(i => i.globalColor === 'green' || i.globalColor === 'blue').length;
 
             document.getElementById('kpiTotal').innerText = total;
             document.getElementById('kpiAtrasados').innerText = atrasados;
-            document.getElementById('kpiAtencao').innerText = atencao;
+            document.getElementById('kpiNoPrazo').innerText = noPrazo;
 
             // Chart Status
             const ctxStatus = document.getElementById('chartStatus');
             if(chartStatusInstance) chartStatusInstance.destroy();
             
-            const statusCounts = { 'Concluído': 0, 'Regular': 0, 'Atenção': 0, 'Atrasado': 0, 'Encerrado': 0 };
-            filteredData.forEach(i => statusCounts[i.globalStatus] = (statusCounts[i.globalStatus] || 0) + 1);
+            const statusCounts = { 'No Prazo': 0, 'Atrasado': 0, 'Concluído': 0, 'Encerrado': 0 };
+            filteredData.forEach(i => {
+                if(i.globalColor === 'green') statusCounts['No Prazo']++;
+                else if(i.globalColor === 'red') statusCounts['Atrasado']++;
+                else if(i.globalColor === 'blue') statusCounts['Concluído']++;
+                else statusCounts['Encerrado']++;
+            });
 
             chartStatusInstance = new Chart(ctxStatus, {
                 type: 'doughnut',
@@ -495,10 +579,17 @@
                     labels: Object.keys(statusCounts),
                     datasets: [{
                         data: Object.values(statusCounts),
-                        backgroundColor: ['#22c55e', '#64748b', '#f97316', '#ef4444', '#94a3b8']
+                        backgroundColor: ['#10b981', '#ef4444', '#004587', '#94a3b8'],
+                        borderWidth: 0,
+                        hoverOffset: 10
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: {size: 10} } } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '70%',
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: {family: 'Inter'} } } } 
+                }
             });
 
             // Chart Region (Top 5)
@@ -516,50 +607,56 @@
                     datasets: [{
                         label: 'Jovens',
                         data: sortedRegions.map(x => x[1]),
-                        backgroundColor: '#004587'
+                        backgroundColor: '#004587',
+                        borderRadius: 4
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: {display: false} } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    indexAxis: 'y', 
+                    plugins: { legend: { display: false } }, 
+                    scales: { 
+                        x: { grid: {display: false} }, 
+                        y: { grid: {display: false} } 
+                    } 
+                }
             });
         }
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-
-            const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
-            if(currentPage > totalPages) currentPage = totalPages;
-            if(currentPage < 1) currentPage = 1;
-
-            document.getElementById('pageDisplay').innerText = `${currentPage} / ${totalPages}`;
-            document.getElementById('btnPrev').disabled = currentPage === 1;
-            document.getElementById('btnNext').disabled = currentPage === totalPages;
             
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = 1;
+
             const start = (currentPage - 1) * itemsPerPage;
             const end = start + itemsPerPage;
             const pageData = filteredData.slice(start, end);
 
+            document.getElementById('pageDisplay').innerText = `${currentPage} / ${totalPages}`;
+            document.getElementById('btnPrev').disabled = currentPage === 1;
+            document.getElementById('btnNext').disabled = currentPage === totalPages;
+
             const formatDate = (d) => d ? d.toLocaleDateString('pt-BR') : '-';
 
             pageData.forEach(item => {
-                // Monta HTML das visitas
-                let visitsHtml = `<div class="flex items-center justify-center gap-2">`;
-                item.processedVisits.forEach(v => {
-                    let colorClass = "bg-slate-200 text-slate-500";
-                    let icon = "";
-                    
-                    if(v.state === 'done') { colorClass = "bg-green-100 text-green-700 border border-green-200"; icon = "✓"; }
-                    else if(v.state === 'late') { colorClass = "bg-red-100 text-red-700 border border-red-200 font-bold"; icon = "!"; }
-                    else if(v.state === 'warning') { colorClass = "bg-orange-100 text-orange-700 border border-orange-200 font-bold"; icon = "⚠"; }
+                // Visual das visitas (Simplificado para bolinhas de status)
+                let visitsHtml = `<div class="flex gap-2 justify-center">`;
+                item.processedVisits.forEach((v, idx) => {
+                    let color = "bg-slate-200";
+                    if(v.state === 'done') color = "bg-emerald-500 shadow-md shadow-emerald-200";
                     
                     visitsHtml += `
-                        <div class="flex flex-col items-center group relative">
-                            <div class="text-[9px] uppercase font-bold text-slate-400 mb-0.5">${v.label}</div>
-                            <div class="px-2 py-1 rounded text-xs ${colorClass} w-24 text-center cursor-help">
-                                ${icon} ${formatDate(v.date)}
+                        <div class="flex flex-col items-center group relative cursor-help">
+                            <div class="w-8 h-8 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold border border-white">
+                                ${idx + 1}
                             </div>
-                            <!-- Tooltip Status -->
-                            <div class="absolute bottom-full mb-1 hidden group-hover:block bg-slate-800 text-white text-[10px] p-1 rounded whitespace-nowrap z-50">
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full mb-2 hidden group-hover:block bg-slate-800 text-white text-[10px] p-2 rounded shadow-lg z-50 whitespace-nowrap">
+                                <strong>${v.label}</strong><br>
+                                Data: ${formatDate(v.date)}<br>
                                 Status: ${v.status}
                             </div>
                         </div>
@@ -567,47 +664,45 @@
                 });
                 visitsHtml += `</div>`;
 
-                // Badge Global
-                let statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold text-white bg-slate-400">${item.globalStatus}</span>`;
-                if(item.globalColor === 'green') statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">Em dia</span>`;
-                if(item.globalColor === 'blue') statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">Completo</span>`;
-                if(item.globalColor === 'red') statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">Atrasado</span>`;
-                if(item.globalColor === 'orange') statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">Atenção</span>`;
-                if(item.globalColor === 'gray') statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-600 border border-slate-300">Encerrado</span>`;
+                // Badge Status
+                let badgeClass = "bg-slate-100 text-slate-500";
+                if(item.globalColor === 'green') badgeClass = "bg-emerald-100 text-emerald-700 border border-emerald-200";
+                if(item.globalColor === 'red') badgeClass = "bg-red-100 text-red-700 border border-red-200";
+                if(item.globalColor === 'blue') badgeClass = "bg-blue-100 text-blue-700 border border-blue-200";
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-50";
                 tr.innerHTML = `
                     <td class="p-4 align-top">
-                        <div class="font-bold text-slate-700">${item.nome}</div>
-                        <div class="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                            <span class="bg-blue-50 text-blue-700 px-1 rounded border border-blue-100">${item.turma}</span>
-                            <span class="text-slate-300">|</span>
-                            <span class="flex items-center gap-0.5" title="Horário Teoria"><i data-lucide="clock" class="w-3 h-3"></i> ${item.hrTeoria}</span>
+                        <div class="font-bold text-slate-700 text-sm">${item.nome}</div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-50 text-blue-600 border border-blue-100">${item.turma}</span>
+                            <span class="text-xs text-slate-400 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${item.hrTeoria}</span>
                         </div>
                     </td>
                     <td class="p-4 align-top">
-                        <div class="text-xs font-bold text-slate-700 truncate max-w-[180px]" title="${item.empresa}">${item.empresa}</div>
-                        <div class="text-xs text-slate-400 mt-1">${item.cidade}</div>
-                        
-                        <!-- Supervisor Info (Hover/Small) -->
-                        <div class="mt-2 text-[10px] text-slate-500 bg-slate-50 p-1.5 rounded border border-slate-100">
-                            <strong>Sup:</strong> ${item.supervisor.nome}<br>
-                            ${item.supervisor.cel ? `<span class="flex items-center gap-1 mt-0.5"><i data-lucide="phone" class="w-2.5 h-2.5"></i> ${item.supervisor.cel}</span>` : ''}
-                            ${item.supervisor.email ? `<span class="flex items-center gap-1 mt-0.5 truncate max-w-[150px]" title="${item.supervisor.email}"><i data-lucide="mail" class="w-2.5 h-2.5"></i> ${item.supervisor.email}</span>` : ''}
+                        <div class="text-xs font-bold text-slate-700 truncate max-w-[150px]" title="${item.empresa}">${item.empresa}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wide">${item.cidade}</div>
+                    </td>
+                    <td class="p-4 align-top">
+                        <div class="text-xs text-slate-600">
+                            <div class="font-medium">${item.supervisor.nome}</div>
+                            ${item.supervisor.cel ? `<div class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5"><i data-lucide="phone" class="w-2.5 h-2.5"></i> ${item.supervisor.cel}</div>` : ''}
+                             ${item.supervisor.email ? `<div class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 truncate max-w-[150px]" title="${item.supervisor.email}"><i data-lucide="mail" class="w-2.5 h-2.5"></i> Email</div>` : ''}
                         </div>
                     </td>
-                    <td class="p-4 align-top text-center">
-                        <div class="text-xs text-slate-600 font-mono">Início: ${formatDate(item.inicio)}</div>
-                        <div class="text-xs ${item.isEncerrado ? 'text-red-500 font-bold' : 'text-slate-500'} font-mono mt-1">
-                            Fim: ${formatDate(item.fim)}
-                        </div>
+                    <td class="p-4 align-top text-center text-xs font-mono text-slate-500">
+                        <div class="text-emerald-600">${formatDate(item.inicio)}</div>
+                        <div class="text-slate-400 border-l h-2 mx-auto my-0.5 w-px"></div>
+                        <div class="${item.isEncerrado ? 'text-red-400 line-through' : ''}">${formatDate(item.fim)}</div>
                     </td>
                     <td class="p-4 align-top">
                         ${visitsHtml}
                     </td>
                     <td class="p-4 align-top text-center">
-                        ${statusBadge}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${badgeClass}">
+                            ${item.globalStatus}
+                        </span>
                     </td>
                 `;
                 tbody.appendChild(tr);
