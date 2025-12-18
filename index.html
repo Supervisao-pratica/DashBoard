@@ -3,624 +3,664 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Acompanhamento - Regional</title>
+    <title>Painel de Gestão - Acompanhamento Senac</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Adicionando suporte a Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
         
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Cores Senac Aproximadas */
+        .bg-senac-blue { background-color: #004587; }
+        .text-senac-blue { color: #004587; }
+        .bg-senac-orange { background-color: #f68d2e; }
+        .text-senac-orange { color: #f68d2e; }
+        
+        .border-senac-blue { border-color: #004587; }
+        
+        /* Animações */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Estilo da Aba Ativa */
-        .tab-active {
-            border-bottom: 2px solid #4f46e5;
-            color: #4f46e5;
-            font-weight: 600;
-        }
-        .tab-inactive {
-            border-bottom: 2px solid transparent;
-            color: #64748b;
-        }
-        .tab-inactive:hover {
-            color: #334155;
-            border-bottom: 2px solid #cbd5e1;
         }
 
         /* Spinner */
         .loader {
             border: 3px solid #f3f3f3;
             border-radius: 50%;
-            border-top: 3px solid #4f46e5;
+            border-top: 3px solid #f68d2e;
             width: 20px;
             height: 20px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Scrollbar fina */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
-    <div class="flex h-screen overflow-hidden">
+    <!-- Header / Barra Superior -->
+    <header class="bg-white shadow-sm border-b border-slate-200 z-30 h-16 flex-shrink-0">
+        <div class="h-full px-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <!-- Logo Simulada -->
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 bg-senac-blue rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-md">
+                        SENAC
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-slate-800 text-lg leading-tight">Gestão de Aprendizagem</h1>
+                        <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Painel de Acompanhamento</p>
+                    </div>
+                </div>
+                
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
 
-        <!-- Sidebar (Fixo) -->
-        <aside class="hidden md:flex flex-col w-64 bg-slate-900 text-white transition-all duration-300">
-            <div class="flex items-center justify-center h-16 border-b border-slate-800 bg-slate-950">
-                <div class="flex items-center gap-2 font-bold text-xl tracking-wider">
-                    <i data-lucide="map" class="text-indigo-400"></i>
-                    <span>REGIONAL</span>
+                <!-- Área de Importação -->
+                <div class="flex items-center gap-2">
+                    <!-- Atualizado para aceitar XLSX -->
+                    <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" class="hidden" onchange="processFile(this)">
+                    <button onclick="document.getElementById('fileInput').click()" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all border border-slate-200 shadow-sm">
+                        <i data-lucide="file-spreadsheet" class="w-3 h-3 text-green-600"></i>
+                        Carregar Excel ou CSV
+                    </button>
+                    <div id="loadingSpinner" class="hidden"><div class="loader"></div></div>
+                    <span id="fileNameDisplay" class="text-xs text-slate-400 italic hidden ml-2"></span>
                 </div>
             </div>
 
-            <nav class="flex-1 overflow-y-auto py-4">
-                <ul class="space-y-1 px-3">
-                    <li>
-                        <a href="#" class="flex items-center gap-3 px-3 py-2.5 bg-indigo-600 text-white rounded-lg transition-colors">
-                            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                            <span class="font-medium">Painel Regionais</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                            <i data-lucide="file-bar-chart" class="w-5 h-5"></i>
-                            <span class="font-medium">Consolidado</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden md:block">
+                    <p class="text-xs font-bold text-senac-blue" id="userName">Gestor Local</p>
+                    <p class="text-[10px] text-slate-400" id="currentDate">--/--/----</p>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-senac-orange text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                    GL
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Área Principal -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Sidebar de Filtros (Expansível) -->
+        <aside class="w-80 bg-white border-r border-slate-200 flex flex-col z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+            <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                        <i data-lucide="filter" class="w-4 h-4 text-senac-orange"></i>
+                        Filtros Avançados
+                    </h3>
+                    <button onclick="clearFilters()" class="text-[10px] text-senac-blue hover:underline font-medium">Limpar Tudo</button>
+                </div>
+
+                <!-- Busca Textual -->
+                <div class="relative mb-4">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                    <input type="text" id="filterSearch" onkeyup="applyFilters()" placeholder="Nome ou Matrícula..." class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-senac-blue outline-none transition-shadow">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-5">
+                
+                <!-- Filtro: Cidades / Região -->
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Unidade / Cidade</label>
+                    <select id="filterRegion" onchange="applyFilters()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-700 outline-none focus:border-senac-blue">
+                        <option value="">Todas as Cidades</option>
+                        <!-- Preenchido via JS -->
+                    </select>
+                </div>
+
+                <!-- Filtro: Status da Visita -->
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Status Atenção</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                            <input type="radio" name="statusFilter" value="all" checked onchange="applyFilters()" class="text-senac-blue focus:ring-senac-blue">
+                            <span class="text-sm text-slate-600">Todos</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                            <input type="radio" name="statusFilter" value="alert" onchange="applyFilters()" class="text-red-500 focus:ring-red-500">
+                            <span class="text-sm text-slate-600 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span> Atrasados / Críticos
+                            </span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                            <input type="radio" name="statusFilter" value="warning" onchange="applyFilters()" class="text-amber-500 focus:ring-amber-500">
+                            <span class="text-sm text-slate-600 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Atenção Próxima
+                            </span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                            <input type="radio" name="statusFilter" value="ok" onchange="applyFilters()" class="text-green-500 focus:ring-green-500">
+                            <span class="text-sm text-slate-600 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span> Em Dia
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Filtro: Intervalo Contrato -->
+                <div class="pt-4 border-t border-slate-100">
+                    <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Fim de Contrato</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-[10px] text-slate-400">De:</span>
+                            <input type="date" id="filterContractStart" onchange="applyFilters()" class="w-full p-1.5 bg-slate-50 border border-slate-200 rounded text-xs">
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400">Até:</span>
+                            <input type="date" id="filterContractEnd" onchange="applyFilters()" class="w-full p-1.5 bg-slate-50 border border-slate-200 rounded text-xs">
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Footer Sidebar -->
+            <div class="p-4 border-t border-slate-200 bg-slate-50 text-center">
+                <p class="text-[10px] text-slate-400">Total Filtrado: <strong id="filterCountDisplay" class="text-slate-700">0</strong> jovens</p>
+            </div>
         </aside>
 
-        <!-- Conteúdo Principal -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <!-- Conteúdo Central -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-slate-50/50 relative">
             
-            <!-- Header Superior -->
-            <header class="bg-white border-b border-slate-200 z-20">
-                <!-- Linha de Cima: Título e Importação -->
-                <div class="h-16 px-6 flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <h1 class="text-xl font-bold text-slate-800" id="headerTitle">Campo Mourão</h1>
-                        
-                        <!-- Botão de Importação Contextual -->
-                        <div class="flex items-center gap-2 ml-4">
-                            <input type="file" id="csvInput" accept=".csv" class="hidden" onchange="processCSV(this)">
-                            <button id="btnImport" onclick="document.getElementById('csvInput').click()" class="flex items-center gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                                <span id="importLabel">Importar CSV (Campo Mourão)</span>
-                            </button>
-                            <div id="loadingSpinner" class="hidden"><div class="loader"></div></div>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-4">
-                        <!-- Busca Global na Aba -->
-                        <div class="relative w-64">
-                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                            <input type="text" id="searchInput" onkeyup="renderCurrentTab()" placeholder="Buscar nesta região..." class="w-full pl-10 pr-4 py-1.5 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                        <div class="h-8 w-px bg-slate-200"></div>
-                        <span id="currentDate" class="text-xs font-bold text-slate-500 uppercase">--/--/----</span>
-                    </div>
-                </div>
-
-                <!-- Linha de Baixo: Abas de Navegação -->
-                <div class="px-6 flex gap-6 overflow-x-auto">
-                    <button onclick="switchTab('campo_mourao')" id="tab-campo_mourao" class="tab-active py-3 text-sm flex items-center gap-2 transition-all">
-                        Campo Mourão
-                        <span id="count-campo_mourao" class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
-                    </button>
-                    <button onclick="switchTab('francisco_beltrao')" id="tab-francisco_beltrao" class="tab-inactive py-3 text-sm flex items-center gap-2 transition-all">
-                        Francisco Beltrão
-                        <span id="count-francisco_beltrao" class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
-                    </button>
-                    <button onclick="switchTab('guarapuava')" id="tab-guarapuava" class="tab-inactive py-3 text-sm flex items-center gap-2 transition-all">
-                        Guarapuava
-                        <span id="count-guarapuava" class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
-                    </button>
-                    <button onclick="switchTab('umuarama')" id="tab-umuarama" class="tab-inactive py-3 text-sm flex items-center gap-2 transition-all">
-                        Umuarama
-                        <span id="count-umuarama" class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px]">0</span>
-                    </button>
-                </div>
-            </header>
-
-            <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
+            <!-- KPIs Interativos -->
+            <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
                 
-                <!-- KPIs Dinâmicos -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    
-                    <!-- KPI 1 -->
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 h-full w-1 bg-indigo-500"></div>
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-slate-500 text-sm font-medium">Jovens na Região</p>
-                                <h3 id="kpiTotalJovens" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                                <p class="text-xs text-slate-400 mt-1">Ativos</p>
-                            </div>
-                            <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                <i data-lucide="users" class="w-6 h-6"></i>
-                            </div>
+                <!-- KPI Total -->
+                <div onclick="resetFilters()" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-senac-blue transition-all group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">Total Geral</p>
+                            <h3 id="kpiTotal" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
                         </div>
-                    </div>
-
-                    <!-- KPI 2 -->
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
-                            <p class="text-slate-500 text-sm font-medium">Progresso Visitas</p>
-                            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i>
-                        </div>
-                        <div class="flex items-end gap-2 mt-2">
-                            <div class="flex-1">
-                                <div class="text-xs text-slate-500 mb-1">1ª</div>
-                                <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div id="barVisita1" class="h-full bg-green-500 w-[0%] transition-all duration-500"></div>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <div class="text-xs text-slate-500 mb-1">2ª</div>
-                                <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div id="barVisita2" class="h-full bg-blue-500 w-[0%] transition-all duration-500"></div>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <div class="text-xs text-slate-500 mb-1">3ª</div>
-                                <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div id="barVisita3" class="h-full bg-purple-500 w-[0%] transition-all duration-500"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-                            <span id="txtVisita1">0%</span>
-                            <span id="txtVisita2">0%</span>
-                            <span id="txtVisita3">0%</span>
-                        </div>
-                    </div>
-
-                    <!-- KPI 3 -->
-                    <div class="bg-white p-5 rounded-xl border border-red-100 shadow-sm relative overflow-hidden">
-                        <div class="absolute right-0 top-0 h-full w-1 bg-amber-400"></div>
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-slate-500 text-sm font-medium">Próximas Visitas</p>
-                                <h3 id="kpiProximas" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                                <div class="flex items-center gap-1 mt-1 text-amber-600 text-xs font-semibold bg-amber-50 px-2 py-0.5 rounded-full w-fit">
-                                    <i data-lucide="clock" class="w-3 h-3"></i>
-                                    <span>30 dias</span>
-                                </div>
-                            </div>
-                            <div class="p-2 bg-amber-50 rounded-lg text-amber-500">
-                                <i data-lucide="calendar-days" class="w-6 h-6"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- KPI 4 -->
-                    <div class="bg-white p-5 rounded-xl border border-red-100 shadow-sm relative overflow-hidden">
-                        <div class="absolute right-0 top-0 h-full w-1 bg-red-500"></div>
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-slate-500 text-sm font-medium">Fim Contrato</p>
-                                <h3 id="kpiFimContrato" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
-                                <div class="flex items-center gap-1 mt-1 text-red-600 text-xs font-semibold bg-red-50 px-2 py-0.5 rounded-full w-fit">
-                                    <i data-lucide="alert-octagon" class="w-3 h-3"></i>
-                                    <span>Este Mês</span>
-                                </div>
-                            </div>
-                            <div class="p-2 bg-red-50 rounded-lg text-red-500">
-                                <i data-lucide="file-warning" class="w-6 h-6"></i>
-                            </div>
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-senac-blue flex items-center justify-center group-hover:bg-senac-blue group-hover:text-white transition-colors">
+                            <i data-lucide="users" class="w-4 h-4"></i>
                         </div>
                     </div>
                 </div>
 
-                <!-- Main Content -->
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- KPI Críticos (Filtro Rápido) -->
+                <div onclick="quickFilter('alert')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-red-500 transition-all group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">Atenção Crítica</p>
+                            <h3 id="kpiCritical" class="text-2xl font-bold text-red-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-[10px] text-red-400 font-medium">Atrasados ou Vencendo</div>
+                </div>
+
+                <!-- KPI Próximas Visitas -->
+                <div onclick="quickFilter('warning')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-senac-orange transition-all group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">Próximas Visitas</p>
+                            <h3 id="kpiWarning" class="text-2xl font-bold text-senac-orange mt-1">0</h3>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-orange-50 text-senac-orange flex items-center justify-center group-hover:bg-senac-orange group-hover:text-white transition-colors">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-[10px] text-orange-400 font-medium">Vencem em 30 dias</div>
+                </div>
+
+                <!-- KPI Concluídos -->
+                <div onclick="quickFilter('ok')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-green-500 transition-all group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wide">Ciclo Completo</p>
+                            <h3 id="kpiDone" class="text-2xl font-bold text-green-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-colors">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de Dados -->
+            <div class="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
                     
-                    <!-- Table Section -->
-                    <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                        <div class="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                            <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                                <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
-                                Listagem: <span id="tableRegionName" class="text-indigo-600">Campo Mourão</span>
-                            </h3>
-                            <button onclick="downloadTemplate()" class="text-xs text-indigo-600 hover:underline">
-                                Baixar Modelo
+                    <!-- Header Tabela -->
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <h2 class="font-bold text-slate-700 text-sm">Listagem Detalhada</h2>
+                        <div class="flex gap-2">
+                            <button onclick="downloadTemplate()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 shadow-sm">
+                                Baixar Modelo Excel
+                            </button>
+                            <button onclick="exportToExcel()" class="px-3 py-1.5 bg-senac-blue text-white rounded-md text-xs font-bold hover:bg-blue-800 shadow-sm flex items-center gap-1">
+                                <i data-lucide="download" class="w-3 h-3"></i> Exportar
                             </button>
                         </div>
-                        
-                        <div class="overflow-x-auto min-h-[400px]">
-                            <table class="w-full text-left text-sm text-slate-600">
-                                <thead class="bg-slate-100 text-slate-700 font-semibold uppercase text-xs">
-                                    <tr>
-                                        <th class="px-4 py-3">Jovem / Matrícula</th>
-                                        <th class="px-4 py-3">Entrada</th>
-                                        <th class="px-4 py-3 text-center">V1</th>
-                                        <th class="px-4 py-3 text-center">V2</th>
-                                        <th class="px-4 py-3 text-center">V3</th>
-                                        <th class="px-4 py-3 text-center">Status Px. Visita</th>
-                                        <th class="px-4 py-3">Fim Contrato</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableBody" class="divide-y divide-slate-100">
-                                    <!-- JS Populate -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
-                            <span class="text-xs text-slate-500">
-                                <span id="startIdx">0</span>-<span id="endIdx">0</span> de <span id="totalIdx">0</span>
-                            </span>
-                            <div class="flex gap-2">
-                                <button onclick="changePage(-1)" class="px-3 py-1 text-xs border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50" id="btnPrev">Anterior</button>
-                                <button onclick="changePage(1)" class="px-3 py-1 text-xs border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50" id="btnNext">Próxima</button>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- Alerts Section -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 h-full">
-                            <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <i data-lucide="siren" class="w-5 h-5 text-red-500"></i>
-                                Alertas na Região
-                            </h3>
-                            <div id="alertList" class="space-y-3 overflow-y-auto max-h-[500px]">
-                                <p class="text-xs text-slate-400">Nenhum dado importado para esta região ainda.</p>
-                            </div>
+                    <!-- Tabela com Scroll -->
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[25%]">Jovem / Matrícula</th>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Unidade/Região</th>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Início</th>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Ciclo Visitas</th>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Próxima Ação</th>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Fim Contrato</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100 bg-white">
+                                <!-- Dados Inseridos Aqui -->
+                                <tr>
+                                    <td colspan="6" class="p-10 text-center flex flex-col items-center justify-center text-slate-400">
+                                        <i data-lucide="file-spreadsheet" class="w-12 h-12 mb-3 text-slate-200"></i>
+                                        <p>Nenhuma planilha carregada.</p>
+                                        <p class="text-xs mt-1">Carregue um arquivo Excel (.xlsx) ou CSV.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginação -->
+                    <div class="p-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs text-slate-500">
+                        <span>Página <span id="pageCurrent" class="font-bold text-slate-700">1</span></span>
+                        <div class="flex gap-2">
+                            <button onclick="changePage(-1)" class="p-1.5 border rounded hover:bg-white disabled:opacity-50" id="btnPrev"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                            <button onclick="changePage(1)" class="p-1.5 border rounded hover:bg-white disabled:opacity-50" id="btnNext"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                         </div>
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+
+        </main>
     </div>
 
-    <!-- LOGIC -->
+    <!-- SCRIPT DE LÓGICA -->
     <script>
         const today = new Date();
         document.getElementById('currentDate').innerText = today.toLocaleDateString('pt-BR');
-
-        // Configuração das Regiões
-        const regions = ['campo_mourao', 'francisco_beltrao', 'guarapuava', 'umuarama'];
-        const regionNames = {
-            'campo_mourao': 'Campo Mourão',
-            'francisco_beltrao': 'Francisco Beltrão',
-            'guarapuava': 'Guarapuava',
-            'umuarama': 'Umuarama'
-        };
-
-        // Estado do Sistema (Separado por Região)
-        let database = {
-            'campo_mourao': [],
-            'francisco_beltrao': [],
-            'guarapuava': [],
-            'umuarama': []
-        };
-
-        let currentTab = 'campo_mourao'; // Aba inicial
+        
+        // --- ESTADO DA APLICAÇÃO ---
+        let rawData = [];      // Dados brutos
+        let filteredData = []; // Dados após filtros
         let currentPage = 1;
-        const itemsPerPage = 20;
+        const itemsPerPage = 50;
+        let uniqueRegions = new Set();
 
         window.onload = () => {
-            // Mock Data Inicial (só pra não ficar vazio)
-            database['campo_mourao'] = [{ nome: "Exemplo Ana", matricula: "101", dataEntrada: "2025-01-10", visita1: "", visita2: "", visita3: "", fimContrato: "2026-01-10" }];
-            
-            updateTabCounts();
-            renderCurrentTab();
             lucide.createIcons();
         };
 
-        // --- Navegação entre Abas ---
-        function switchTab(tabId) {
-            currentTab = tabId;
-            currentPage = 1; // Reset paginação ao mudar de aba
-            
-            // Atualizar UI das Abas
-            regions.forEach(r => {
-                const btn = document.getElementById(`tab-${r}`);
-                if (r === tabId) {
-                    btn.classList.remove('tab-inactive');
-                    btn.classList.add('tab-active');
-                } else {
-                    btn.classList.remove('tab-active');
-                    btn.classList.add('tab-inactive');
-                }
-            });
-
-            // Atualizar Títulos e Labels
-            const niceName = regionNames[tabId];
-            document.getElementById('headerTitle').innerText = niceName;
-            document.getElementById('tableRegionName').innerText = niceName;
-            document.getElementById('importLabel').innerText = `Importar CSV (${niceName})`;
-            document.getElementById('searchInput').value = ''; // Limpar busca ao trocar
-
-            renderCurrentTab();
-        }
-
-        // --- Processamento de CSV ---
-        function processCSV(input) {
+        // --- PROCESSAMENTO DE ARQUIVO (Excel e CSV) ---
+        function processFile(input) {
             const file = input.files[0];
             if (!file) return;
 
-            // Limite de segurança 5MB
-            if (file.size > 5 * 1024 * 1024) {
-                alert("Arquivo muito grande. Tente dividir o arquivo.");
-                input.value = '';
-                return;
-            }
-
+            document.getElementById('fileNameDisplay').innerText = file.name;
+            document.getElementById('fileNameDisplay').classList.remove('hidden');
             document.getElementById('loadingSpinner').classList.remove('hidden');
-            document.getElementById('btnImport').disabled = true;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const text = e.target.result;
-                    const rows = text.split('\n');
-                    
-                    // Delay para não travar UI
-                    setTimeout(() => {
-                        const newData = rows.slice(1).map(row => {
-                            if (!row.trim()) return null;
-                            const cols = row.split(',');
-                            if (cols.length < 4) return null; // Validação básica
-                            
-                            const clean = (val) => val ? val.replace(/"/g, '').trim() : '';
-                            return {
-                                nome: clean(cols[0]),
-                                matricula: clean(cols[1]),
-                                // Região ignorada do CSV, usamos a Aba Atual
-                                dataEntrada: clean(cols[3]),
-                                visita1: clean(cols[4]),
-                                visita2: clean(cols[5]),
-                                visita3: clean(cols[6]),
-                                fimContrato: clean(cols[7])
-                            };
-                        }).filter(item => item !== null);
 
-                        // Salva APENAS na aba atual
-                        database[currentTab] = newData;
+            reader.onload = function(e) {
+                setTimeout(() => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // --- LÓGICA DE SELEÇÃO DE ABA ---
+                        // Tenta encontrar a aba "Dados Gerais" (case insensitive para ajudar)
+                        let targetSheetName = workbook.SheetNames.find(name => name.toLowerCase() === "dados gerais");
+                        
+                        if (!targetSheetName) {
+                            // Se não achar, avisa o usuário e usa a primeira como fallback
+                            targetSheetName = workbook.SheetNames[0];
+                            alert(`Atenção: A aba "Dados Gerais" não foi encontrada.\n\nO sistema carregou a aba: "${targetSheetName}".\nPara garantir a leitura correta, renomeie a aba principal da sua planilha para "Dados Gerais".`);
+                        } else {
+                            // Feedback positivo opcional (pode comentar se achar chato)
+                            // alert(`Aba "Dados Gerais" localizada e carregada com sucesso!`);
+                        }
+
+                        const worksheet = workbook.Sheets[targetSheetName];
+                        
+                        // Converte para JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+                        if (jsonData.length < 2) {
+                            throw new Error("Planilha vazia ou sem dados.");
+                        }
+
+                        // Remove cabeçalho e processa
+                        const rows = jsonData.slice(1);
+
+                        rawData = rows.map((cols, index) => {
+                            // Proteção básica se a linha estiver vazia
+                            if (cols.length === 0 || !cols[0]) return null;
+                            
+                            // Mapeamento esperado (pela ordem das colunas no Excel):
+                            // A: Nome, B: Matricula, C: Cidade, D: Inicio, E: V1, F: V2, G: V3, H: Fim
+                            const item = {
+                                id: index,
+                                nome: String(cols[0] || "").trim(),
+                                matricula: String(cols[1] || "").trim(),
+                                cidade: String(cols[2] || "").trim(),
+                                inicio: parseExcelDate(cols[3]),
+                                v1: parseExcelDate(cols[4]),
+                                v2: parseExcelDate(cols[5]),
+                                v3: parseExcelDate(cols[6]),
+                                fim: parseExcelDate(cols[7])
+                            };
+
+                            if (item.cidade) uniqueRegions.add(item.cidade);
+                            return item;
+
+                        }).filter(i => i !== null);
+
+                        populateRegionFilter();
+                        applyFilters(); 
                         
                         document.getElementById('loadingSpinner').classList.add('hidden');
-                        document.getElementById('btnImport').disabled = false;
-                        input.value = ''; // Reset input
-                        
-                        updateTabCounts();
-                        renderCurrentTab();
-                        alert(`${newData.length} jovens importados para ${regionNames[currentTab]}!`);
-                        
-                    }, 100);
+                        lucide.createIcons();
+                        alert(`Carregado com sucesso! ${rawData.length} registros da aba "${targetSheetName}".`);
 
-                } catch (error) {
-                    console.error(error);
-                    alert("Erro ao ler CSV.");
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    document.getElementById('btnImport').disabled = false;
-                }
+                    } catch (err) {
+                        console.error(err);
+                        alert("Erro ao processar arquivo. Verifique se é um Excel (.xlsx) válido.");
+                        document.getElementById('loadingSpinner').classList.add('hidden');
+                    }
+                }, 100);
             };
-            reader.readAsText(file);
-        }
-
-        function updateTabCounts() {
-            regions.forEach(r => {
-                const count = database[r] ? database[r].length : 0;
-                document.getElementById(`count-${r}`).innerText = count;
-            });
-        }
-
-        // --- Renderização Principal ---
-        function renderCurrentTab() {
-            const data = database[currentTab] || [];
-            const search = document.getElementById('searchInput').value.toLowerCase();
-
-            // Filtragem local
-            const filtered = data.filter(item => {
-                return (item.nome || "").toLowerCase().includes(search) || 
-                       (item.matricula || "").includes(search);
-            });
-
-            updateKPIs(filtered);
-            updateAlerts(filtered);
-            renderTable(filtered);
-            lucide.createIcons();
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">Nenhum dado. Importe o CSV desta região.</td></tr>';
-                updatePagination(0, 0, 0);
-                return;
-            }
-
-            // Paginação
-            const total = data.length;
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = Math.min(start + itemsPerPage, total);
-            const pageData = data.slice(start, end);
-
-            pageData.forEach(item => {
-                const calculations = calculateStatus(item);
-                
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-100 fade-in";
-                tr.innerHTML = `
-                    <td class="px-4 py-3">
-                        <div class="font-medium text-slate-900 truncate max-w-[150px]">${item.nome}</div>
-                        <div class="text-xs text-slate-400">Mat: ${item.matricula}</div>
-                    </td>
-                    <td class="px-4 py-3 text-xs">${formatDate(item.dataEntrada)}</td>
-                    <td class="px-4 py-3 text-center">${renderBadge(item.visita1)}</td>
-                    <td class="px-4 py-3 text-center">${renderBadge(item.visita2)}</td>
-                    <td class="px-4 py-3 text-center">${renderBadge(item.visita3)}</td>
-                    <td class="px-4 py-3 text-center">
-                        <div class="${calculations.colorClass} text-sm font-medium">${calculations.dateDisplay}</div>
-                        <div class="text-xs text-slate-400">${calculations.msg}</div>
-                    </td>
-                    <td class="px-4 py-3 text-xs">${formatDate(item.fimContrato)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            updatePagination(start + 1, end, total);
-        }
-
-        // --- Lógica de Negócio (Datas e Status) ---
-        function calculateStatus(item) {
-            const entryDate = parseDate(item.dataEntrada);
-            if (!entryDate) return { dateDisplay: "-", msg: "", colorClass: "text-slate-400" };
-
-            let nextDate = new Date(entryDate);
-            let done = false;
-
-            if (!item.visita1) {
-                nextDate.setMonth(nextDate.getMonth() + 3);
-            } else if (!item.visita2) {
-                nextDate.setMonth(nextDate.getMonth() + 6);
-            } else if (!item.visita3) {
-                nextDate.setMonth(nextDate.getMonth() + 9);
-            } else {
-                done = true;
-            }
-
-            if (done) return { dateDisplay: "Concluído", msg: "Ciclo Fechado", colorClass: "text-green-600" };
-
-            const diffTime = nextDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            let color = "text-slate-600";
-            let msg = `Em ${diffDays} dias`;
+            reader.readAsArrayBuffer(file);
+        }
 
-            if (diffDays < 0) {
-                color = "text-red-600";
-                msg = `Atrasado ${Math.abs(diffDays)}d`;
-            } else if (diffDays < 30) {
-                color = "text-amber-600";
+        // --- PARSER DE DATAS DO EXCEL E TEXTO ---
+        function parseExcelDate(value) {
+            if (!value) return null;
+
+            // Se for número (Excel serial date)
+            if (typeof value === 'number') {
+                // Excel base date is 1900-01-01, mas tem o bug do ano bissexto de 1900.
+                const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+                const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+                return new Date(date.getTime() + userTimezoneOffset);
             }
 
-            return {
-                dateDisplay: nextDate.toLocaleDateString('pt-BR'),
-                msg: msg,
-                colorClass: color
-            };
-        }
-
-        function updateKPIs(data) {
-            document.getElementById('kpiTotalJovens').innerText = data.length;
-
-            // Progresso
-            const total = data.length || 1;
-            const v1 = data.filter(i => i.visita1).length;
-            const v2 = data.filter(i => i.visita2).length;
-            const v3 = data.filter(i => i.visita3).length;
-
-            setBar('barVisita1', 'txtVisita1', v1, total);
-            setBar('barVisita2', 'txtVisita2', v2, total);
-            setBar('barVisita3', 'txtVisita3', v3, total);
-
-            // Contratos vencendo
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
-            const expiring = data.filter(i => {
-                const d = parseDate(i.fimContrato);
-                return d && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-            }).length;
-            document.getElementById('kpiFimContrato').innerText = expiring;
-
-            // Próximas Visitas (Estimativa Rápida)
-            const warningCount = data.filter(i => {
-                const status = calculateStatus(i);
-                return status.colorClass.includes('amber') || status.colorClass.includes('red');
-            }).length;
-            document.getElementById('kpiProximas').innerText = warningCount;
-        }
-
-        function updateAlerts(data) {
-            const container = document.getElementById('alertList');
-            container.innerHTML = '';
+            // Se for string
+            if (typeof value === 'string') {
+                return parseDateBr(value);
+            }
             
-            // Pega os top 10 casos críticos
-            const alerts = data
-                .map(item => ({ item, status: calculateStatus(item) }))
-                .filter(res => res.status.colorClass.includes('red')) // Só atrasados
-                .slice(0, 10);
-
-            if (alerts.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhum atraso crítico identificado.</p>';
-                return;
-            }
-
-            alerts.forEach(({item, status}) => {
-                const div = document.createElement('div');
-                div.className = "p-3 bg-red-50 rounded-lg border border-red-100 mb-2";
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-bold text-red-700 uppercase">Atraso</span>
-                        <span class="text-[10px] text-red-500">${status.dateDisplay}</span>
-                    </div>
-                    <p class="text-sm font-medium text-slate-800 truncate">${item.nome}</p>
-                    <p class="text-xs text-slate-500">${status.msg}</p>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        // --- Helpers ---
-        function setBar(barId, txtId, val, total) {
-            const pct = Math.round((val/total)*100);
-            document.getElementById(barId).style.width = `${pct}%`;
-            document.getElementById(txtId).innerText = `${pct}%`;
-        }
-
-        function parseDate(str) {
-            if(!str) return null;
-            if(str.includes('/')) { const p = str.split('/'); return new Date(p[2], p[1]-1, p[0]); }
-            if(str.includes('-')) { const p = str.split('-'); return new Date(p[0], p[1]-1, p[2]); }
             return null;
         }
 
-        function formatDate(str) {
-            const d = parseDate(str);
-            return d ? d.toLocaleDateString('pt-BR') : '-';
+        function parseDateBr(dateStr) {
+            if (!dateStr || dateStr.length < 5) return null;
+            
+            // ISO
+            if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
+                const parts = dateStr.split('-');
+                return new Date(parts[0], parts[1]-1, parts[2]);
+            }
+            // BR (DD/MM/AAAA)
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    return new Date(parts[2], parts[1]-1, parts[0]);
+                }
+            }
+            return new Date(dateStr); // Fallback
         }
 
-        function renderBadge(val) {
-            if(val) return '<span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>';
-            return '<span class="text-slate-300">-</span>';
+        function formatDate(dateObj) {
+            if (!dateObj || isNaN(dateObj.getTime())) return "-";
+            return dateObj.toLocaleDateString('pt-BR');
         }
 
-        function changePage(delta) {
-            const data = database[currentTab] || [];
-            const maxPage = Math.ceil(data.length / itemsPerPage);
-            const newPage = currentPage + delta;
-            if(newPage >= 1 && newPage <= maxPage) {
-                currentPage = newPage;
-                renderCurrentTab();
+        // --- LÓGICA DE NEGÓCIO ---
+        function calculateStatus(item) {
+            if (!item.inicio || isNaN(item.inicio.getTime())) return { status: 'unknown', text: 'Sem data', color: 'slate' };
+
+            const nextDueDate = new Date(item.inicio);
+            
+            if (!item.v1) {
+                nextDueDate.setMonth(nextDueDate.getMonth() + 3);
+            } else if (!item.v2) {
+                nextDueDate.setMonth(nextDueDate.getMonth() + 6);
+            } else if (!item.v3) {
+                nextDueDate.setMonth(nextDueDate.getMonth() + 9);
+            } else {
+                return { status: 'ok', text: 'Concluído', color: 'green', date: null };
+            }
+
+            const diffTime = nextDueDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+                return { status: 'alert', text: `Atrasado ${Math.abs(diffDays)}d`, color: 'red', date: nextDueDate };
+            } else if (diffDays <= 30) {
+                return { status: 'warning', text: `Vence em ${diffDays}d`, color: 'orange', date: nextDueDate };
+            } else {
+                return { status: 'ok', text: `Em ${diffDays}d`, color: 'slate', date: nextDueDate };
             }
         }
 
-        function updatePagination(s, e, t) {
-            document.getElementById('startIdx').innerText = s;
-            document.getElementById('endIdx').innerText = e;
-            document.getElementById('totalIdx').innerText = t;
+        function checkContractExpiry(dateObj) {
+            if (!dateObj || isNaN(dateObj.getTime())) return 'ok';
+            const diffTime = dateObj - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) return 'expired';
+            if (diffDays < 30) return 'warning';
+            return 'ok';
+        }
+
+        // --- FILTROS & UI ---
+        function populateRegionFilter() {
+            const select = document.getElementById('filterRegion');
+            select.innerHTML = '<option value="">Todas as Cidades</option>';
+            Array.from(uniqueRegions).sort().forEach(city => {
+                const opt = document.createElement('option');
+                opt.value = city;
+                opt.innerText = city;
+                select.appendChild(opt);
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterRegion').value = '';
+            document.querySelector('input[name="statusFilter"][value="all"]').checked = true;
+            document.getElementById('filterContractStart').value = '';
+            document.getElementById('filterContractEnd').value = '';
+            applyFilters();
+        }
+
+        function quickFilter(type) {
+            document.querySelector(`input[name="statusFilter"][value="${type}"]`).checked = true;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('filterSearch').value.toLowerCase();
+            const region = document.getElementById('filterRegion').value;
+            const statusType = document.querySelector('input[name="statusFilter"]:checked').value;
+            const cStart = document.getElementById('filterContractStart').value ? new Date(document.getElementById('filterContractStart').value) : null;
+            const cEnd = document.getElementById('filterContractEnd').value ? new Date(document.getElementById('filterContractEnd').value) : null;
+
+            filteredData = rawData.filter(item => {
+                const calc = calculateStatus(item);
+                const contractStatus = checkContractExpiry(item.fim);
+
+                if (search && !item.nome.toLowerCase().includes(search) && !item.matricula.includes(search)) return false;
+                if (region && item.cidade !== region) return false;
+
+                if (statusType === 'alert') {
+                    if (calc.status !== 'alert' && contractStatus !== 'expired' && contractStatus !== 'warning') return false;
+                } else if (statusType === 'warning') {
+                    if (calc.status !== 'warning') return false;
+                } else if (statusType === 'ok') {
+                    if (calc.status === 'alert' || calc.status === 'warning') return false;
+                }
+
+                if (cStart && (!item.fim || item.fim < cStart)) return false;
+                if (cEnd && (!item.fim || item.fim > cEnd)) return false;
+
+                return true;
+            });
+
+            currentPage = 1;
+            updateKPIs();
+            renderTable();
+            document.getElementById('filterCountDisplay').innerText = filteredData.length;
+        }
+
+        function updateKPIs() {
+            const data = filteredData;
+            document.getElementById('kpiTotal').innerText = data.length;
+            let critical = 0, warning = 0, done = 0;
+
+            data.forEach(item => {
+                const s = calculateStatus(item);
+                const c = checkContractExpiry(item.fim);
+                if (s.status === 'alert' || c === 'expired' || c === 'warning') critical++;
+                if (s.status === 'warning') warning++;
+                if (s.status === 'ok' && s.text === 'Concluído') done++;
+            });
+
+            document.getElementById('kpiCritical').innerText = critical;
+            document.getElementById('kpiWarning').innerText = warning;
+            document.getElementById('kpiDone').innerText = done;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Nenhum registro encontrado.</td></tr>`;
+                document.getElementById('pageCurrent').innerText = 0;
+                return;
+            }
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = Math.min(start + itemsPerPage, filteredData.length);
+            const pageItems = filteredData.slice(start, end);
+
+            document.getElementById('pageCurrent').innerText = `${currentPage} (${Math.ceil(filteredData.length/itemsPerPage)})`;
             document.getElementById('btnPrev').disabled = currentPage === 1;
-            document.getElementById('btnNext').disabled = e >= t;
+            document.getElementById('btnNext').disabled = end >= filteredData.length;
+
+            pageItems.forEach(item => {
+                const s = calculateStatus(item);
+                const contractExp = checkContractExpiry(item.fim);
+                const rowClass = (s.status === 'alert' || contractExp === 'expired') ? 'bg-red-50/50' : 'hover:bg-slate-50';
+
+                const badge = (date) => date 
+                    ? `<span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span> <span class="text-[10px] text-green-700">${formatDate(date)}</span>`
+                    : `<span class="inline-block w-2 h-2 rounded-full bg-slate-200"></span>`;
+
+                let statusBadge = '';
+                if (s.status === 'alert') statusBadge = `<div class="text-red-600 font-bold text-xs bg-red-100 px-2 py-1 rounded inline-flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> ${s.text}</div>`;
+                else if (s.status === 'warning') statusBadge = `<div class="text-amber-600 font-bold text-xs bg-amber-100 px-2 py-1 rounded inline-flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${s.text}</div>`;
+                else if (s.text === 'Concluído') statusBadge = `<div class="text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded inline-flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Completo</div>`;
+                else statusBadge = `<span class="text-slate-500 text-xs">${s.text}</span>`;
+                
+                let contractClass = "text-slate-600";
+                if (contractExp === 'expired') contractClass = "text-red-600 font-bold";
+                if (contractExp === 'warning') contractClass = "text-amber-600 font-bold";
+
+                const tr = document.createElement('tr');
+                tr.className = `${rowClass} border-b border-slate-100 transition-colors fade-in`;
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <div class="font-bold text-slate-800 text-sm">${item.nome}</div>
+                        <div class="text-xs text-slate-400 font-mono mt-0.5">#${item.matricula}</div>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">${item.cidade || 'N/A'}</span>
+                    </td>
+                    <td class="p-4 text-center text-xs text-slate-600 font-mono">${formatDate(item.inicio)}</td>
+                    <td class="p-4">
+                        <div class="flex items-center justify-center gap-2">
+                            <div class="flex flex-col items-center" title="1ª Visita">${badge(item.v1)}</div>
+                            <div class="w-4 h-px bg-slate-200"></div>
+                            <div class="flex flex-col items-center" title="2ª Visita">${badge(item.v2)}</div>
+                            <div class="w-4 h-px bg-slate-200"></div>
+                            <div class="flex flex-col items-center" title="3ª Visita">${badge(item.v3)}</div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-center">
+                        ${statusBadge}
+                        ${s.date ? `<div class="text-[10px] text-slate-400 mt-1">Prev: ${formatDate(s.date)}</div>` : ''}
+                    </td>
+                    <td class="p-4 text-center text-xs ${contractClass} font-mono">
+                        ${formatDate(item.fim)}
+                        ${contractExp === 'expired' ? '<br><span class="text-[9px] uppercase bg-red-100 text-red-600 px-1 rounded">Vencido</span>' : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
         }
 
         function downloadTemplate() {
-            const csv = "Nome,Matricula,Regiao(Ignorado),DataEntrada(AAAA-MM-DD),Visita1,Visita2,Visita3,FimContrato\nMaria,123,CM,2025-01-01,,,,2026-01-01";
-            const blob = new Blob([csv], {type: 'text/csv'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'modelo_importacao.csv';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            // Cria um workbook Excel real para download
+            const ws = XLSX.utils.aoa_to_sheet([
+                ["Nome Completo", "Matricula", "Cidade/Unidade", "Data Inicio", "Data Visita 1", "Data Visita 2", "Data Visita 3", "Fim Contrato"],
+                ["Maria Silva", "12345", "Curitiba", "2025-01-10", "", "", "", "2026-01-10"],
+                ["Joao Souza", "67890", "Londrina", "2025-02-15", "2025-05-15", "", "", "2026-02-15"]
+            ]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dados Gerais");
+            XLSX.writeFile(wb, "Modelo_Importacao_Senac.xlsx");
+        }
+
+        function exportToExcel() {
+            if (filteredData.length === 0) return alert("Sem dados para exportar.");
+            
+            const exportData = [["Nome", "Matricula", "Unidade", "Inicio", "Visita1", "Visita2", "Visita3", "FimContrato", "Status"]];
+            
+            filteredData.forEach(row => {
+                const s = calculateStatus(row);
+                exportData.push([
+                    row.nome, row.matricula, row.cidade, 
+                    formatDate(row.inicio), formatDate(row.v1), formatDate(row.v2), formatDate(row.v3), formatDate(row.fim), 
+                    s.text
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dados Filtrados");
+            XLSX.writeFile(wb, "Exportacao_Gestao.xlsx");
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            renderTable();
+        }
+
+        function clearFilters() {
+            resetFilters();
         }
     </script>
 </body>
