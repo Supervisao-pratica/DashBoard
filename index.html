@@ -7,14 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Adicionando suporte a Excel -->
+    <!-- SheetJS para ler Excel e CSV -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        /* Cores Senac Aproximadas */
+        /* Cores Senac */
         .bg-senac-blue { background-color: #004587; }
         .text-senac-blue { color: #004587; }
         .bg-senac-orange { background-color: #f68d2e; }
@@ -40,7 +40,7 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Scrollbar fina */
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -49,30 +49,27 @@
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- Header / Barra Superior -->
+    <!-- Header -->
     <header class="bg-white shadow-sm border-b border-slate-200 z-30 h-16 flex-shrink-0">
         <div class="h-full px-6 flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <!-- Logo Simulada -->
                 <div class="flex items-center gap-2">
                     <div class="w-10 h-10 bg-senac-blue rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-md">
                         SENAC
                     </div>
                     <div>
                         <h1 class="font-bold text-slate-800 text-lg leading-tight">Gestão de Aprendizagem</h1>
-                        <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Painel de Acompanhamento</p>
+                        <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Painel "Dados Gerais"</p>
                     </div>
                 </div>
                 
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
 
-                <!-- Área de Importação -->
                 <div class="flex items-center gap-2">
-                    <!-- Atualizado para aceitar XLSX e XLSM -->
                     <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .xlsm" class="hidden" onchange="processFile(this)">
                     <button onclick="document.getElementById('fileInput').click()" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-full text-xs font-bold transition-all border border-slate-200 shadow-sm">
                         <i data-lucide="file-spreadsheet" class="w-3 h-3 text-green-600"></i>
-                        Carregar Excel (.xlsx, .xlsm)
+                        Carregar Planilha (.xlsx/.csv)
                     </button>
                     <div id="loadingSpinner" class="hidden"><div class="loader"></div></div>
                     <span id="fileNameDisplay" class="text-xs text-slate-400 italic hidden ml-2"></span>
@@ -94,36 +91,31 @@
     <!-- Área Principal -->
     <div class="flex-1 flex overflow-hidden">
         
-        <!-- Sidebar de Filtros (Expansível) -->
+        <!-- Sidebar Filtros -->
         <aside class="w-80 bg-white border-r border-slate-200 flex flex-col z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             <div class="p-5 border-b border-slate-100 bg-slate-50/50">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-bold text-slate-700 flex items-center gap-2">
                         <i data-lucide="filter" class="w-4 h-4 text-senac-orange"></i>
-                        Filtros Avançados
+                        Filtros
                     </h3>
                     <button onclick="clearFilters()" class="text-[10px] text-senac-blue hover:underline font-medium">Limpar Tudo</button>
                 </div>
 
-                <!-- Busca Textual -->
                 <div class="relative mb-4">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                    <input type="text" id="filterSearch" onkeyup="applyFilters()" placeholder="Nome ou Matrícula..." class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-senac-blue outline-none transition-shadow">
+                    <input type="text" id="filterSearch" onkeyup="applyFilters()" placeholder="Buscar Jovem..." class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-senac-blue outline-none transition-shadow">
                 </div>
             </div>
 
             <div class="flex-1 overflow-y-auto p-5 space-y-5">
-                
-                <!-- Filtro: Cidades / Região -->
                 <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Unidade / Cidade</label>
+                    <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Cidade da Empresa</label>
                     <select id="filterRegion" onchange="applyFilters()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-700 outline-none focus:border-senac-blue">
-                        <option value="">Todas as Cidades</option>
-                        <!-- Preenchido via JS -->
+                        <option value="">Todas</option>
                     </select>
                 </div>
 
-                <!-- Filtro: Status da Visita -->
                 <div>
                     <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Status Atenção</label>
                     <div class="space-y-2">
@@ -134,7 +126,7 @@
                         <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
                             <input type="radio" name="statusFilter" value="alert" onchange="applyFilters()" class="text-red-500 focus:ring-red-500">
                             <span class="text-sm text-slate-600 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-red-500"></span> Atrasados / Críticos
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span> Atrasados
                             </span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
@@ -152,7 +144,6 @@
                     </div>
                 </div>
 
-                <!-- Filtro: Intervalo Contrato -->
                 <div class="pt-4 border-t border-slate-100">
                     <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Fim de Contrato</label>
                     <div class="grid grid-cols-2 gap-2">
@@ -166,22 +157,18 @@
                         </div>
                     </div>
                 </div>
-                
             </div>
             
-            <!-- Footer Sidebar -->
             <div class="p-4 border-t border-slate-200 bg-slate-50 text-center">
-                <p class="text-[10px] text-slate-400">Total Filtrado: <strong id="filterCountDisplay" class="text-slate-700">0</strong> jovens</p>
+                <p class="text-[10px] text-slate-400">Filtrados: <strong id="filterCountDisplay" class="text-slate-700">0</strong> jovens</p>
             </div>
         </aside>
 
         <!-- Conteúdo Central -->
         <main class="flex-1 flex flex-col overflow-hidden bg-slate-50/50 relative">
             
-            <!-- KPIs Interativos -->
+            <!-- KPIs -->
             <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
-                
-                <!-- KPI Total -->
                 <div onclick="resetFilters()" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-senac-blue transition-all group">
                     <div class="flex justify-between items-start">
                         <div>
@@ -193,8 +180,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- KPI Críticos (Filtro Rápido) -->
                 <div onclick="quickFilter('alert')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-red-500 transition-all group">
                     <div class="flex justify-between items-start">
                         <div>
@@ -205,10 +190,8 @@
                             <i data-lucide="alert-circle" class="w-4 h-4"></i>
                         </div>
                     </div>
-                    <div class="mt-2 text-[10px] text-red-400 font-medium">Atrasados ou Vencendo</div>
+                    <div class="mt-2 text-[10px] text-red-400 font-medium">Atrasados</div>
                 </div>
-
-                <!-- KPI Próximas Visitas -->
                 <div onclick="quickFilter('warning')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-senac-orange transition-all group">
                     <div class="flex justify-between items-start">
                         <div>
@@ -221,8 +204,6 @@
                     </div>
                     <div class="mt-2 text-[10px] text-orange-400 font-medium">Vencem em 30 dias</div>
                 </div>
-
-                <!-- KPI Concluídos -->
                 <div onclick="quickFilter('ok')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-green-500 transition-all group">
                     <div class="flex justify-between items-start">
                         <div>
@@ -236,30 +217,22 @@
                 </div>
             </div>
 
-            <!-- Tabela de Dados -->
+            <!-- Tabela -->
             <div class="flex-1 px-6 pb-6 overflow-hidden flex flex-col">
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
-                    
-                    <!-- Header Tabela -->
                     <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                        <h2 class="font-bold text-slate-700 text-sm">Listagem Detalhada</h2>
-                        <div class="flex gap-2">
-                            <button onclick="downloadTemplate()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 shadow-sm">
-                                Baixar Modelo Excel
-                            </button>
-                            <button onclick="exportToExcel()" class="px-3 py-1.5 bg-senac-blue text-white rounded-md text-xs font-bold hover:bg-blue-800 shadow-sm flex items-center gap-1">
-                                <i data-lucide="download" class="w-3 h-3"></i> Exportar
-                            </button>
-                        </div>
+                        <h2 class="font-bold text-slate-700 text-sm">Listagem Detalhada (Dados Gerais)</h2>
+                        <button onclick="exportToExcel()" class="px-3 py-1.5 bg-senac-blue text-white rounded-md text-xs font-bold hover:bg-blue-800 shadow-sm flex items-center gap-1">
+                            <i data-lucide="download" class="w-3 h-3"></i> Exportar
+                        </button>
                     </div>
 
-                    <!-- Tabela com Scroll -->
                     <div class="flex-1 overflow-auto">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[25%]">Jovem / Matrícula</th>
-                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Unidade/Região</th>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[25%]">Jovem / Turma</th>
+                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa / Cidade</th>
                                     <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Início</th>
                                     <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Ciclo Visitas</th>
                                     <th class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Próxima Ação</th>
@@ -267,19 +240,16 @@
                                 </tr>
                             </thead>
                             <tbody id="tableBody" class="divide-y divide-slate-100 bg-white">
-                                <!-- Dados Inseridos Aqui -->
                                 <tr>
                                     <td colspan="6" class="p-10 text-center flex flex-col items-center justify-center text-slate-400">
                                         <i data-lucide="file-spreadsheet" class="w-12 h-12 mb-3 text-slate-200"></i>
-                                        <p>Nenhuma planilha carregada.</p>
-                                        <p class="text-xs mt-1">Carregue um arquivo Excel (.xlsx) ou CSV.</p>
+                                        <p>Aguardando planilha "Dados Gerais".</p>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Paginação -->
                     <div class="p-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs text-slate-500">
                         <span>Página <span id="pageCurrent" class="font-bold text-slate-700">1</span></span>
                         <div class="flex gap-2">
@@ -293,23 +263,20 @@
         </main>
     </div>
 
-    <!-- SCRIPT DE LÓGICA -->
     <script>
         const today = new Date();
         document.getElementById('currentDate').innerText = today.toLocaleDateString('pt-BR');
         
-        // --- ESTADO DA APLICAÇÃO ---
-        let rawData = [];      // Dados brutos
-        let filteredData = []; // Dados após filtros
+        // ESTADO
+        let rawData = [];
+        let filteredData = [];
         let currentPage = 1;
         const itemsPerPage = 50;
         let uniqueRegions = new Set();
 
-        window.onload = () => {
-            lucide.createIcons();
-        };
+        window.onload = () => { lucide.createIcons(); };
 
-        // --- PROCESSAMENTO DE ARQUIVO (Excel e CSV) ---
+        // --- PROCESSAMENTO DE ARQUIVO ---
         function processFile(input) {
             const file = input.files[0];
             if (!file) return;
@@ -326,47 +293,70 @@
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
                         
-                        // --- LÓGICA DE SELEÇÃO DE ABA ---
-                        // Tenta encontrar a aba "Dados Gerais" (case insensitive para ajudar)
-                        let targetSheetName = workbook.SheetNames.find(name => name.toLowerCase() === "dados gerais");
+                        // 1. TENTAR ENCONTRAR A ABA "Dados Gerais"
+                        let targetSheetName = workbook.SheetNames.find(name => 
+                            name.trim().toLowerCase() === "dados gerais"
+                        );
                         
+                        // Se não achar pelo nome exato, verifica se estamos carregando um CSV (que só tem 1 aba)
+                        // ou se precisamos usar a primeira aba disponível (fallback)
                         if (!targetSheetName) {
-                            // Se não achar, avisa o usuário e usa a primeira como fallback
-                            targetSheetName = workbook.SheetNames[0];
-                            alert(`Atenção: A aba "Dados Gerais" não foi encontrada.\n\nO sistema carregou a aba: "${targetSheetName}".\nPara garantir a leitura correta, renomeie a aba principal da sua planilha para "Dados Gerais".`);
-                        } else {
-                            // Feedback positivo opcional (pode comentar se achar chato)
-                            // alert(`Aba "Dados Gerais" localizada e carregada com sucesso!`);
+                            if (workbook.SheetNames.length === 1) {
+                                targetSheetName = workbook.SheetNames[0]; // É CSV ou só tem 1 aba
+                            } else {
+                                targetSheetName = workbook.SheetNames[0];
+                                alert(`Aba "Dados Gerais" não encontrada! Carregando a aba: "${targetSheetName}".\nRecomendado: Use o arquivo original com a aba nomeada "Dados Gerais".`);
+                            }
                         }
 
                         const worksheet = workbook.Sheets[targetSheetName];
                         
-                        // Converte para JSON
+                        // Ler cabeçalhos (Linha 1)
                         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
-                        if (jsonData.length < 2) {
-                            throw new Error("Planilha vazia ou sem dados.");
-                        }
+                        if (jsonData.length < 2) throw new Error("Planilha vazia.");
 
-                        // Remove cabeçalho e processa
+                        const headers = jsonData[0].map(h => String(h).trim());
+                        
+                        // MAPEAR ÍNDICES DAS COLUNAS (Baseado na sua planilha "Dados Gerais")
+                        const idx = {
+                            nome: headers.indexOf("Apr. Nome"),
+                            turma: headers.indexOf("Turma"),
+                            cidade: headers.indexOf("Emp. Cidade"),
+                            razao: headers.indexOf("Razao Social"),
+                            inicio: headers.indexOf("TurDatIni"),
+                            fim: headers.indexOf("TurDatFim"),
+                            v1: headers.indexOf("Data da Visita 1"),
+                            v2: headers.indexOf("Data da Visita 2"),
+                            v3: headers.indexOf("Data da Visita 3")
+                        };
+
+                        // Se não achou "Apr. Nome", tenta "Nome" genérico
+                        if (idx.nome === -1) idx.nome = headers.findIndex(h => h.includes("Nome"));
+
+                        console.log("Mapeamento de Colunas:", idx); // Debug no console
+
                         const rows = jsonData.slice(1);
 
                         rawData = rows.map((cols, index) => {
-                            // Proteção básica se a linha estiver vazia
-                            if (cols.length === 0 || !cols[0]) return null;
+                            // Ignora linhas totalmente vazias
+                            if (!cols || cols.every(c => c === "")) return null;
                             
-                            // Mapeamento esperado (pela ordem das colunas no Excel):
-                            // A: Nome, B: Matricula, C: Cidade, D: Inicio, E: V1, F: V2, G: V3, H: Fim
+                            // Extrai valores usando o mapa
+                            const nomeVal = idx.nome > -1 ? cols[idx.nome] : "";
+                            if (!nomeVal) return null; // Sem nome, ignora
+
                             const item = {
                                 id: index,
-                                nome: String(cols[0] || "").trim(),
-                                matricula: String(cols[1] || "").trim(),
-                                cidade: String(cols[2] || "").trim(),
-                                inicio: parseExcelDate(cols[3]),
-                                v1: parseExcelDate(cols[4]),
-                                v2: parseExcelDate(cols[5]),
-                                v3: parseExcelDate(cols[6]),
-                                fim: parseExcelDate(cols[7])
+                                nome: String(nomeVal).trim(),
+                                turma: idx.turma > -1 ? String(cols[idx.turma]).trim() : "",
+                                cidade: idx.cidade > -1 ? String(cols[idx.cidade]).trim() : "",
+                                empresa: idx.razao > -1 ? String(cols[idx.razao]).trim() : "",
+                                inicio: parseDateSmart(cols[idx.inicio]),
+                                fim: parseDateSmart(cols[idx.fim]),
+                                v1: parseDateSmart(cols[idx.v1]),
+                                v2: parseDateSmart(cols[idx.v2]),
+                                v3: parseDateSmart(cols[idx.v3])
                             };
 
                             if (item.cidade) uniqueRegions.add(item.cidade);
@@ -379,11 +369,11 @@
                         
                         document.getElementById('loadingSpinner').classList.add('hidden');
                         lucide.createIcons();
-                        alert(`Carregado com sucesso! ${rawData.length} registros da aba "${targetSheetName}".`);
+                        alert(`Sucesso! ${rawData.length} registros carregados da aba "${targetSheetName}".`);
 
                     } catch (err) {
                         console.error(err);
-                        alert("Erro ao processar arquivo. Verifique se é um Excel (.xlsx, .xlsm) válido.");
+                        alert("Erro ao processar. Verifique se o arquivo tem a estrutura correta (Aba 'Dados Gerais').");
                         document.getElementById('loadingSpinner').classList.add('hidden');
                     }
                 }, 100);
@@ -392,42 +382,33 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- PARSER DE DATAS DO EXCEL E TEXTO ---
-        function parseExcelDate(value) {
+        // --- PARSER DE DATAS INTELIGENTE (ISO, BR, Excel Serial) ---
+        function parseDateSmart(value) {
             if (!value) return null;
 
-            // Se for número (Excel serial date)
+            // Se for número (Excel Serial Date)
             if (typeof value === 'number') {
-                // Excel base date is 1900-01-01, mas tem o bug do ano bissexto de 1900.
                 const date = new Date(Math.round((value - 25569) * 86400 * 1000));
-                const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-                return new Date(date.getTime() + userTimezoneOffset);
+                // Ajuste Fuso
+                const offset = date.getTimezoneOffset() * 60000;
+                return new Date(date.getTime() + offset);
             }
 
             // Se for string
             if (typeof value === 'string') {
-                return parseDateBr(value);
-            }
-            
-            return null;
-        }
-
-        function parseDateBr(dateStr) {
-            if (!dateStr || dateStr.length < 5) return null;
-            
-            // ISO
-            if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
-                const parts = dateStr.split('-');
-                return new Date(parts[0], parts[1]-1, parts[2]);
-            }
-            // BR (DD/MM/AAAA)
-            if (dateStr.includes('/')) {
-                const parts = dateStr.split('/');
-                if (parts.length === 3) {
-                    return new Date(parts[2], parts[1]-1, parts[0]);
+                value = value.trim();
+                // Formato ISO: 2025-02-17
+                if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const [y, m, d] = value.split('-');
+                    return new Date(y, m-1, d);
+                }
+                // Formato BR: 17/02/2025
+                if (value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                    const [d, m, y] = value.split('/');
+                    return new Date(y, m-1, d);
                 }
             }
-            return new Date(dateStr); // Fallback
+            return null;
         }
 
         function formatDate(dateObj) {
@@ -437,16 +418,20 @@
 
         // --- LÓGICA DE NEGÓCIO ---
         function calculateStatus(item) {
-            if (!item.inicio || isNaN(item.inicio.getTime())) return { status: 'unknown', text: 'Sem data', color: 'slate' };
+            if (!item.inicio) return { status: 'unknown', text: 'Sem data', color: 'slate' };
 
             const nextDueDate = new Date(item.inicio);
+            let phase = "";
             
             if (!item.v1) {
                 nextDueDate.setMonth(nextDueDate.getMonth() + 3);
+                phase = "1ª Visita";
             } else if (!item.v2) {
                 nextDueDate.setMonth(nextDueDate.getMonth() + 6);
+                phase = "2ª Visita";
             } else if (!item.v3) {
                 nextDueDate.setMonth(nextDueDate.getMonth() + 9);
+                phase = "3ª Visita";
             } else {
                 return { status: 'ok', text: 'Concluído', color: 'green', date: null };
             }
@@ -455,16 +440,16 @@
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             if (diffDays < 0) {
-                return { status: 'alert', text: `Atrasado ${Math.abs(diffDays)}d`, color: 'red', date: nextDueDate };
+                return { status: 'alert', text: `Atrasado ${Math.abs(diffDays)}d (${phase})`, color: 'red', date: nextDueDate };
             } else if (diffDays <= 30) {
-                return { status: 'warning', text: `Vence em ${diffDays}d`, color: 'orange', date: nextDueDate };
+                return { status: 'warning', text: `Vence em ${diffDays}d (${phase})`, color: 'orange', date: nextDueDate };
             } else {
-                return { status: 'ok', text: `Em ${diffDays}d`, color: 'slate', date: nextDueDate };
+                return { status: 'ok', text: `Em ${diffDays}d (${phase})`, color: 'slate', date: nextDueDate };
             }
         }
 
         function checkContractExpiry(dateObj) {
-            if (!dateObj || isNaN(dateObj.getTime())) return 'ok';
+            if (!dateObj) return 'ok';
             const diffTime = dateObj - today;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
@@ -476,7 +461,7 @@
         // --- FILTROS & UI ---
         function populateRegionFilter() {
             const select = document.getElementById('filterRegion');
-            select.innerHTML = '<option value="">Todas as Cidades</option>';
+            select.innerHTML = '<option value="">Todas</option>';
             Array.from(uniqueRegions).sort().forEach(city => {
                 const opt = document.createElement('option');
                 opt.value = city;
@@ -510,7 +495,7 @@
                 const calc = calculateStatus(item);
                 const contractStatus = checkContractExpiry(item.fim);
 
-                if (search && !item.nome.toLowerCase().includes(search) && !item.matricula.includes(search)) return false;
+                if (search && !item.nome.toLowerCase().includes(search)) return false;
                 if (region && item.cidade !== region) return false;
 
                 if (statusType === 'alert') {
@@ -592,22 +577,22 @@
                 tr.className = `${rowClass} border-b border-slate-100 transition-colors fade-in`;
                 tr.innerHTML = `
                     <td class="p-4">
-                        <div class="font-bold text-slate-800 text-sm">${item.nome}</div>
-                        <div class="text-xs text-slate-400 font-mono mt-0.5">#${item.matricula}</div>
+                        <div class="font-bold text-slate-800 text-sm truncate max-w-[200px]" title="${item.nome}">${item.nome}</div>
+                        <div class="text-xs text-slate-400 font-mono mt-0.5">Turma: ${item.turma}</div>
                     </td>
                     <td class="p-4">
-                        <span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">${item.cidade || 'N/A'}</span>
-                                <!-- Dados Inseridos Aqui -->
-                                <tr>
-                                    <td colspan="6" class="p-10 text-center flex flex-col items-center justify-center text-slate-400">
-                                        <i data-lucide="file-spreadsheet" class="w-12 h-12 mb-3 text-slate-200"></i>
-                                        <p>Nenhuma planilha carregada.</p>
-                                        <p class="text-xs mt-1">Carregue um arquivo Excel (.xlsx, .xlsm) ou CSV.</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                        <div class="text-xs font-bold text-slate-700 truncate max-w-[150px]" title="${item.empresa}">${item.empresa}</div>
+                        <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-medium mt-1 inline-block">${item.cidade || 'N/A'}</span>
+                    </td>
+                    <td class="p-4 text-center text-xs text-slate-600 font-mono">${formatDate(item.inicio)}</td>
+                    <td class="p-4">
+                        <div class="flex items-center justify-center gap-2">
+                            <div class="flex flex-col items-center" title="1ª Visita">${badge(item.v1)}</div>
+                            <div class="w-4 h-px bg-slate-200"></div>
+                            <div class="flex flex-col items-center" title="2ª Visita">${badge(item.v2)}</div>
+                            <div class="w-4 h-px bg-slate-200"></div>
+                            <div class="flex flex-col items-center" title="3ª Visita">${badge(item.v3)}</div>
+                        </div>
                     </td>
                     <td class="p-4 text-center">
                         ${statusBadge}
@@ -623,45 +608,23 @@
             lucide.createIcons();
         }
 
-        function downloadTemplate() {
-            // Cria um workbook Excel real para download
-            const ws = XLSX.utils.aoa_to_sheet([
-                ["Nome Completo", "Matricula", "Cidade/Unidade", "Data Inicio", "Data Visita 1", "Data Visita 2", "Data Visita 3", "Fim Contrato"],
-                ["Maria Silva", "12345", "Curitiba", "2025-01-10", "", "", "", "2026-01-10"],
-                ["Joao Souza", "67890", "Londrina", "2025-02-15", "2025-05-15", "", "", "2026-02-15"]
-            ]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Dados Gerais");
-            XLSX.writeFile(wb, "Modelo_Importacao_Senac.xlsx");
-        }
-
-        function exportToExcel() {
-            if (filteredData.length === 0) return alert("Sem dados para exportar.");
-            
-            const exportData = [["Nome", "Matricula", "Unidade", "Inicio", "Visita1", "Visita2", "Visita3", "FimContrato", "Status"]];
-            
-            filteredData.forEach(row => {
-                const s = calculateStatus(row);
-                exportData.push([
-                    row.nome, row.matricula, row.cidade, 
-                    formatDate(row.inicio), formatDate(row.v1), formatDate(row.v2), formatDate(row.v3), formatDate(row.fim), 
-                    s.text
-                ]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Dados Filtrados");
-            XLSX.writeFile(wb, "Exportacao_Gestao.xlsx");
-        }
-
         function changePage(delta) {
             currentPage += delta;
             renderTable();
         }
 
-        function clearFilters() {
-            resetFilters();
+        function clearFilters() { resetFilters(); }
+
+        function exportToExcel() {
+            if (filteredData.length === 0) return alert("Sem dados.");
+            const exportData = [["Nome", "Turma", "Empresa", "Cidade", "Inicio", "Visita1", "Visita2", "Visita3", "Fim", "Status"]];
+            filteredData.forEach(r => {
+                exportData.push([r.nome, r.turma, r.empresa, r.cidade, formatDate(r.inicio), formatDate(r.v1), formatDate(r.v2), formatDate(r.v3), formatDate(r.fim), calculateStatus(r).text]);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Filtrados");
+            XLSX.writeFile(wb, "Exportacao_Gestao_Senac.xlsx");
         }
     </script>
 </body>
